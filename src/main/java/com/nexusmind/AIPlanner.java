@@ -30,15 +30,4 @@ public class AIPlanner {
         return suggestions;
     }
 
-    public String determinePriority(String suggestion) {
-        String lower = suggestion.toLowerCase();
-        if (lower.contains("security") || lower.contains("critical") || lower.contains("crash") || lower.contains("vulnerability")) {
-            return "High";
-        } else if (lower.contains("optimize") || lower.contains("performance") || lower.contains("refactor") || lower.contains("improve")) {
-            return "Medium";
-        } else {
-            return "Low";
-        }
-    }
-
 }
