@@ -9,6 +9,11 @@ public class Notifier {
 
     private static final String WEBHOOK_URL = "https://hooks.slack.com/services/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";
 
+    public static void main(String[] args) {
+        sendSuccess("Test Message: NexusMind webhook notification successful!");
+    }
+
+
     public static void sendSuccess(String message) {
         sendMessage("[✅ NexusMind] " + message);
     }

@@ -110,7 +110,8 @@ public class ImprovementAgent {
                 checkpointManager.saveCheckpoint(filesToProcess.get(filesToProcess.size() - 1).getAbsolutePath(), checkpointManager.getIteration() + filesToProcess.size());
             }
             String smartMessage = generateSmartCommitMessage(filesToProcess);
-            gitManager.addCommitPush(smartMessage);
+            gitManager.addCommitPush(smartMessage, checkpointManager.getIteration());
+
 
         } else {
             System.out.println("No real improvements detected in the batch. No commit created.");
