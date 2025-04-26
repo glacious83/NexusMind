@@ -73,8 +73,8 @@ public class NexusMindOrchestrator {
 
                 Notifier.sendSuccess("NexusMind successfully completed an evolution cycle.");
 
-                System.out.println("\nCycle completed. Sleeping for 1 hour...");
-                Thread.sleep(60 * 60 * 1000);
+                System.out.println("\nCycle completed. Sleeping for 1 minute...");
+                Thread.sleep(60 * 1000);
 
             } catch (Exception e) {
                 String errorMessage = "Critical Error during cycle: " + e.getMessage();
