@@ -1,19 +1,19 @@
 ﻿; Script: nexus_ai.ahk
-; Purpose: Automate ChatGPT web interface input
+; Purpose: Automate ChatGPT web interface input (AHK v2)
 
-SetTitleMatchMode, 2  ; Allow partial title match
-if WinExist("ChatGPT") 
-{
-    WinActivate
-    Sleep 500
-    SendInput ^a  ; Select all existing text
-    Sleep 200
-    SendInput ^v  ; Paste new code from clipboard
-    Sleep 200
-    SendInput {Enter}  ; Submit
+SetTitleMatchMode(2) ; Allow partial match
+
+Sleep(10000) ; Wait 10 seconds for ChatGPT window to open
+
+if WinExist("ChatGPT") {
+    WinActivate("ChatGPT")
+    Sleep(500)
+    Send("^a") ; Select all existing text
+    Sleep(200)
+    Send("^v") ; Paste from clipboard
+    Sleep(200)
+    Send("{Enter}") ; Submit
+} else {
+    MsgBox("ChatGPT window not found!")
 }
-else
-{
-    MsgBox, ChatGPT window not found!
-}
-Exit
+ExitApp
