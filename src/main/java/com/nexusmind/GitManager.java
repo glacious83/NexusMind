@@ -43,15 +43,13 @@ public class GitManager {
 
             System.out.println("Creating Pull Request...");
 
-            System.out.println("Creating Pull Request...");
-
-            try {
-                createPullRequest(branchName, "master");
+            if (pullRequestExists(branchName)) {
+                System.out.println("Pull Request already exists for branch: " + branchName);
+                Notifier.sendSuccess("Pull Request already exists for branch: " + branchName + "\nCommit Message: " + commitMessage);
+            } else {
+                createPullRequest(branchName, "main");
                 System.out.println("Pull Request created successfully!");
-                Notifier.sendSuccess("Pull Request created successfully for branch: " + branchName);
-            } catch (Exception e) {
-                System.err.println("Git operation failed: " + e.getMessage());
-                Notifier.sendError("Git operation failed: " + e.getMessage());
+                Notifier.sendSuccess("Pull Request created successfully for branch: " + branchName + "\nCommit Message: " + commitMessage);
             }
 
             System.out.println("Pull Request created successfully!");
