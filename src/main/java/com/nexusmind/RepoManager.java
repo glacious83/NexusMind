@@ -101,4 +101,7 @@ public class RepoManager {
         return localPath;
     }
 
+    public List<String> findRelatedDependencies(File file) {
+        return new ArrayList<>(); // TODO: Implement real dependency analysis later
+    }
 }
