@@ -42,7 +42,16 @@ public class GitManager {
             runCommand(new String[]{"git", "-C", localRepoPath, "push", "-u", "origin", branchName});
 
             System.out.println("Creating Pull Request...");
-            createPullRequest(branchName, "main"); // Assuming your main branch is called 'main'
+
+            if (pullRequestExists(branchName)) {
+                System.out.println("Pull Request already exists for branch: " + branchName);
+                Notifier.sendSuccess("Pull Request already exists for branch: " + branchName);
+            } else {
+                createPullRequest(branchName, "master");
+                System.out.println("Pull Request created successfully!");
+                Notifier.sendSuccess("New Pull Request created successfully for branch: " + branchName);
+            }
+
 
             System.out.println("Pull Request created successfully!");
 
@@ -85,4 +94,29 @@ public class GitManager {
             throw new RuntimeException("Failed to create Pull Request. HTTP code: " + responseCode);
         }
     }
+
+    private boolean pullRequestExists(String branchName) {
+        try {
+            URL url = new URL("https://api.github.com/repos/" + githubRepoOwner + "/" + githubRepoName + "/pulls?head=" + githubRepoOwner + ":" + branchName);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("Authorization", "Bearer " + githubToken);
+            connection.setRequestProperty("Accept", "application/vnd.github+json");
+
+            int responseCode = connection.getResponseCode();
+
+            if (responseCode == 200) {
+                String responseBody = new String(connection.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+                return !responseBody.equals("[]"); // If not empty array, PR exists
+            } else {
+                System.err.println("Failed to check existing PRs. HTTP code: " + responseCode);
+                return false; // Assume no PR if error
+            }
+
+        } catch (IOException e) {
+            System.err.println("Error checking existing PRs: " + e.getMessage());
+            return false;
+        }
+    }
+
 }
