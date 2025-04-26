@@ -28,6 +28,11 @@ public class GitHubIssueManager {
 
     public void createIssue(String title, String body) {
         try {
+            // GitHub title length limit = 256 characters
+            if (title.length() > 250) {
+                title = title.substring(0, 250) + "...";
+            }
+
             URL url = new URL("https://api.github.com/repos/" + githubRepoOwner + "/" + githubRepoName + "/issues");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("POST");
