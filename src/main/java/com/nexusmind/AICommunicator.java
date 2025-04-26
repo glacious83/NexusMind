@@ -1,18 +1,36 @@
 package com.nexusmind;
 
+import java.awt.*;
+import java.awt.datatransfer.StringSelection;
+import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.Objects;
+
 public class AICommunicator {
 
-    public void displayPromptForUser(String fileName, String fileContent) {
-        System.out.println("\n\n--- AI Communication ---");
-        System.out.println(">> Please copy the following prompt into ChatGPT manually:");
-        System.out.println(">> File: " + fileName);
-        System.out.println("---------------------------");
-        System.out.println(generatePrompt(fileContent));
-        System.out.println("---------------------------");
-        System.out.println("After ChatGPT replies, manually paste the improved code back.");
+    public void sendPromptAutomatically(String fileName, String fileContent) {
+        String prompt = generatePrompt(fileContent);
+        copyToClipboard(prompt);
+        triggerAutoHotkeyScript();
+        System.out.println("Prompt sent to ChatGPT automatically.");
     }
 
     private String generatePrompt(String fileContent) {
         return "You are a senior software engineer. Improve the following Java code for performance, readability, and optimization. Only return the improved code inside a single code block.\n\n" + fileContent;
+    }
+
+    private void copyToClipboard(String text) {
+        Toolkit.getDefaultToolkit()
+               .getSystemClipboard()
+               .setContents(new StringSelection(text), null);
+    }
+
+    private void triggerAutoHotkeyScript() {
+        try {
+            Runtime.getRuntime().exec(new File(Objects.requireNonNull(AICommunicator.class.getResource("/nexus_ai.ahk")).toURI()).getAbsolutePath()); // <-- Put your real AHK script path here
+        } catch (IOException | URISyntaxException e) {
+            System.err.println("Error running AutoHotkey script: " + e.getMessage());
+        }
     }
 }
