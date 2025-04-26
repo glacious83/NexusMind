@@ -55,7 +55,15 @@ public class RepoManager {
 
     public String getNextFileToProcess(String lastProcessedFile) {
         List<File> javaFiles = listAllJavaFiles(new File(localPath));
-        javaFiles.sort((a, b) -> a.getAbsolutePath().compareToIgnoreCase(b.getAbsolutePath()));
+        javaFiles.sort((a, b) -> {
+            int priorityA = getPriorityScore(a);
+            int priorityB = getPriorityScore(b);
+            if (priorityA != priorityB) {
+                return Integer.compare(priorityB, priorityA); // Descending
+            } else {
+                return a.getAbsolutePath().compareToIgnoreCase(b.getAbsolutePath());
+            }
+        });
 
         boolean foundLast = (lastProcessedFile == null);
 
@@ -69,4 +77,24 @@ public class RepoManager {
         }
         return null;
     }
+
+    private int getPriorityScore(File file) {
+        String path = file.getAbsolutePath().toLowerCase();
+        String name = file.getName().toLowerCase();
+
+        if (path.contains("/service/") || path.contains("/controller/")) {
+            return 10;
+        }
+        if (name.endsWith("service.java") || name.endsWith("manager.java") || name.endsWith("controller.java")) {
+            return 10;
+        }
+        if (path.contains("/model/") || path.contains("/dto/") || path.contains("/entity/")) {
+            return 2;
+        }
+        if (name.endsWith("dto.java") || name.endsWith("entity.java")) {
+            return 2;
+        }
+        return 5;
+    }
+
 }
