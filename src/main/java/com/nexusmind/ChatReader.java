@@ -14,7 +14,8 @@ public class ChatReader {
 
         // Connect to the existing Edge browser over websocket
         Browser browser = chromium.connectOverCDP("http://localhost:9222");
-        Page page = browser.contexts().get(0).pages().get(0); // Connect to the first page/tab
+        Page page = browser.contexts().get(0).pages().get(0);
+        this.page = page;
 
         page.navigate("https://chat.openai.com/");
 
