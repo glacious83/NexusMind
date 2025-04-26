@@ -11,12 +11,14 @@ public class ImprovementAgent {
     private final RepoManager repoManager;
     private final AICommunicator aiCommunicator;
     private final ChatReader chatReader;
+    private final GitManager gitManager;
 
     public ImprovementAgent(CheckpointManager checkpointManager, RepoManager repoManager) {
         this.checkpointManager = checkpointManager;
         this.repoManager = repoManager;
         this.aiCommunicator = new AICommunicator();
         this.chatReader = new ChatReader();
+        this.gitManager = new GitManager("https://github.com/glacious83/NexusMind");
     }
 
     public void improveNextFile() {
@@ -49,6 +51,9 @@ public class ImprovementAgent {
             } else {
                 System.err.println("Failed to retrieve improved code.");
             }
+
+            gitManager.addCommitPush("AI improved: " + nextFile.getName());
+
 
         } catch (IOException | InterruptedException e) {
             System.err.println("Error improving file: " + e.getMessage());
