@@ -11,9 +11,26 @@ public class AIPlanner {
     }
 
     public String generateImprovementSuggestions(String projectSummary) {
-        String prompt = "Given this Java project structure, suggest technical improvements, missing best practices, possible refactorings, and new features. List them clearly and briefly. Structure them as action items.\n\nProject Structure:\n" + projectSummary;
+        String prompt = """
+            You are not only tasked with improving existing code.
 
-        aiCommunicator.sendPromptAutomatically("Project Improvement Suggestions", prompt);
+            Your true goal is to evolve this project into a highly intelligent autonomous AI engineer.
+
+            You should:
+            - Propose missing classes, modules, and services that would create new AI capabilities.
+            - Design systems for self-improvement, self-repair, self-expansion, and self-learning.
+            - Think proactively about the architecture needed for an AI to create new AIs.
+            - Suggest new packages, directories, service layers, and intelligent agents.
+            - Improve code quality, but also expand the project into a real thinking machine.
+
+            Focus on evolution, creativity, scalability, and recursive improvement.
+
+            Base your suggestions on the following current project structure:
+
+            %s
+            """.formatted(projectSummary);
+
+        aiCommunicator.sendPromptAutomatically("Project Evolution Planning", prompt);
 
         chatReader.openExistingSession();
 
@@ -24,10 +41,9 @@ public class AIPlanner {
             Thread.currentThread().interrupt();
         }
 
-        String suggestions = chatReader.fetchLatestCodeBlock(); // ChatGPT response expected as a code block
+        String suggestions = chatReader.fetchLatestCodeBlock();
         chatReader.close();
 
         return suggestions;
     }
-
 }
