@@ -22,7 +22,7 @@ public class ImprovementPromptBuilder {
             StringBuilder prompt = new StringBuilder();
 
             prompt.append("""
-                You are tasked with directly improving this existing Java class.
+                You are tasked with directly improving the following Java class.
 
                 File Path: %s
                 Package: %s
@@ -43,14 +43,15 @@ public class ImprovementPromptBuilder {
                 Project Structure Overview:
                 %s
 
-                Instructions:
-                - Carefully improve the provided Java class code.
-                - Focus on improving performance, scalability, error handling, modularity, architecture, and readability.
-                - Expand the class if needed to add capabilities for AI self-improvement, self-repair, meta-learning, or autonomous behavior.
-                - DO NOT discuss improvements. Just directly modify and return the full improved Java code.
-                - If you detect missing critical modules or services, note their creation ideas briefly inside the commit message.
-                - Return ONLY the full improved Java code inside a ```java``` block.
-                - Additionally, provide a short Git commit message summarizing your changes inside [COMMIT_MSG]...[/COMMIT_MSG].
+                STRICT INSTRUCTIONS:
+                - You MUST improve the provided Java code meaningfully.
+                - DO NOT return the same code unchanged.
+                - Always enhance performance, scalability, naming, structure, modularity, error handling, readability, architecture.
+                - If no major logic improvements are found, at least optimize formatting, comments, minor refactoring.
+                - You MUST return:
+                    1. The full improved Java class inside a single ```java``` code block.
+                    2. A short Git commit message inside [COMMIT_MSG] and [/COMMIT_MSG] tags.
+                - Both parts MUST be included every time. Otherwise, the response will be considered invalid.
 
                 Current Code:
                 """.formatted(projectStructure));
