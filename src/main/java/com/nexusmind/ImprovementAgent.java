@@ -43,9 +43,12 @@ public class ImprovementAgent {
         }
 
         StringBuilder combinedPrompt = new StringBuilder();
+        List<String> originalContents = new ArrayList<>();
+
         for (File file : filesToProcess) {
             try {
                 String content = new String(Files.readAllBytes(file.toPath()));
+                originalContents.add(content);
                 combinedPrompt.append("\n\n=== File: ").append(file.getName()).append(" ===\n");
                 combinedPrompt.append(content).append("\n");
             } catch (IOException e) {
@@ -59,7 +62,7 @@ public class ImprovementAgent {
 
         System.out.println("Waiting for AI response (45 seconds)...");
         try {
-            Thread.sleep(45000); // Give ChatGPT enough time to respond
+            Thread.sleep(45000);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
@@ -72,7 +75,6 @@ public class ImprovementAgent {
             return;
         }
 
-        // For now, save the entire improved batch into one file for manual checking
         try {
             File batchOutput = new File("batch_improvement_output.txt");
             Files.write(batchOutput.toPath(), improvedCodeBatch.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
@@ -81,11 +83,35 @@ public class ImprovementAgent {
             System.err.println("Error writing batch improvement output: " + e.getMessage());
         }
 
-        // Update checkpoint to last file processed
-        if (!filesToProcess.isEmpty()) {
-            checkpointManager.saveCheckpoint(filesToProcess.get(filesToProcess.size() - 1).getAbsolutePath(), checkpointManager.getIteration() + filesToProcess.size());
+        boolean anyRealImprovement = false;
+
+        for (int i = 0; i < filesToProcess.size(); i++) {
+            File originalFile = filesToProcess.get(i);
+            String originalContent = originalContents.get(i);
+
+            // For now, simulate splitting (we can enhance later)
+            String improvedContent = improvedCodeBatch; // TODO: Properly split per file in the future
+
+            if (originalContent.trim().equals(improvedContent.trim())) {
+                System.out.println("No real improvement detected for file: " + originalFile.getName() + ". Skipping save and commit for this file.");
+                continue;
+            }
+
+            try {
+                Files.write(originalFile.toPath(), improvedContent.getBytes(), StandardOpenOption.TRUNCATE_EXISTING);
+                anyRealImprovement = true;
+            } catch (IOException e) {
+                System.err.println("Error writing improved file: " + originalFile.getName() + " - " + e.getMessage());
+            }
         }
 
-        gitManager.addCommitPush("AI improved batch of " + filesToProcess.size() + " files");
+        if (anyRealImprovement) {
+            if (!filesToProcess.isEmpty()) {
+                checkpointManager.saveCheckpoint(filesToProcess.get(filesToProcess.size() - 1).getAbsolutePath(), checkpointManager.getIteration() + filesToProcess.size());
+            }
+            gitManager.addCommitPush("AI improved batch of " + filesToProcess.size() + " files");
+        } else {
+            System.out.println("No real improvements detected in the batch. No commit created.");
+        }
     }
 }
