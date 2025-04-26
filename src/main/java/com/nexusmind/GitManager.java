@@ -32,7 +32,7 @@ public class GitManager {
     }
 
     public void addCommitPush(String commitMessage, int iteration) {
-        String branchName = "nexusmind/batch-" + iteration;
+        String branchName = "nexusmind/batch-" + iteration + "-" + System.currentTimeMillis();
 
         try {
             System.out.println("Creating and pushing new branch: " + branchName);
