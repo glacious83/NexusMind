@@ -10,6 +10,6 @@ public class AutomationController {
         ImprovementAgent agent = new ImprovementAgent(checkpointManager, repoManager);
 
         repoManager.updateRepo();
-        agent.improveNextFile();
+        agent.improveNextFiles(5); // Process 5 files per batch
     }
 }
