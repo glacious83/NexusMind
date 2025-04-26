@@ -14,10 +14,12 @@ public class ImprovementAgent {
     private final ImprovementPromptBuilder promptBuilder;
     private final AICommunicator aiCommunicator;
     private final ChatReader chatReader;
+    private final GitManager gitManager;
 
-    public ImprovementAgent(CheckpointManager checkpointManager, RepoManager repoManager) {
+    public ImprovementAgent(CheckpointManager checkpointManager, RepoManager repoManager, GitManager gitManager) {
         this.checkpointManager = checkpointManager;
         this.repoManager = repoManager;
+        this.gitManager = gitManager;
         this.structureMapper = new ProjectStructureMapper(repoManager.getLocalPath());
         String projectStructure = structureMapper.generateProjectStructure();
         this.promptBuilder = new ImprovementPromptBuilder(projectStructure);
@@ -30,6 +32,7 @@ public class ImprovementAgent {
         int iteration = checkpointManager.getIteration();
 
         List<String> improvedFiles = new ArrayList<>();
+        List<String> commitMessages = new ArrayList<>();
         int filesProcessed = 0;
 
         while (filesProcessed < batchSize) {
@@ -50,12 +53,10 @@ public class ImprovementAgent {
 
             System.out.println("Improving file: " + nextFilePath);
 
-            // Generate a safe, focused prompt
-            List<String> dependencies = repoManager.findRelatedDependencies(nextFile); // (Optional: implement this later)
+            List<String> dependencies = repoManager.findRelatedDependencies(nextFile);
             String prompt = promptBuilder.buildPromptForFile(nextFile, dependencies);
 
-            // Send prompt to ChatGPT
-            aiCommunicator.sendPromptAutomatically("Improve Java Class", prompt);
+            aiCommunicator.sendPromptAutomatically("Improve Java Class and Provide Commit Message", prompt);
 
             chatReader.openExistingSession();
             System.out.println("Waiting for AI response (45 seconds)...");
@@ -65,28 +66,43 @@ public class ImprovementAgent {
                 Thread.currentThread().interrupt();
             }
 
-            String improvedCode = chatReader.fetchLatestCodeBlock();
+            String fullResponse = chatReader.fetchLatestCodeBlock();
             chatReader.close();
 
-            if (improvedCode == null) {
+            if (fullResponse == null) {
                 System.err.println("Failed to retrieve improved code for file: " + nextFilePath);
                 break;
             }
 
-            // Save improved file
+            String commitMessage = "AI Improvement"; // fallback
+            int commitStart = fullResponse.indexOf("[COMMIT_MSG]");
+            int commitEnd = fullResponse.indexOf("[/COMMIT_MSG]");
+
+            if (commitStart != -1 && commitEnd != -1 && commitEnd > commitStart) {
+                commitMessage = fullResponse.substring(commitStart + 12, commitEnd).trim();
+                fullResponse = fullResponse.substring(0, commitStart).trim();
+            }
+
+            System.out.println("Extracted Commit Message: " + commitMessage);
+
             try (FileWriter writer = new FileWriter(nextFile)) {
-                writer.write(improvedCode);
+                writer.write(fullResponse);
             } catch (IOException e) {
                 System.err.println("Error writing improved file: " + nextFilePath);
             }
 
             improvedFiles.add(nextFilePath);
+            commitMessages.add(commitMessage);
+
             lastProcessed = nextFilePath;
             filesProcessed++;
         }
 
         if (!improvedFiles.isEmpty()) {
-            checkpointManager.saveCheckpoint(lastProcessed, iteration + 1);
+            checkpointManager.saveCheckpoint(lastProcessed, checkpointManager.getIteration() + 1);
+
+            String fullCommitMessage = String.join("\n", commitMessages);
+            gitManager.addCommitPush(fullCommitMessage);
         }
     }
 }

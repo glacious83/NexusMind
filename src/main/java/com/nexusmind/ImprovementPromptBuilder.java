@@ -50,7 +50,8 @@ public class ImprovementPromptBuilder {
                 - Keep import paths correct
                 - Do not move methods to other files
                 - Maintain clean code principles
-                - Return ONLY the improved full file content. No extra comments.
+                - Return ONLY the improved full file content inside a ```java``` code block.
+                - Additionally, provide a Git commit message summarizing your changes inside these special tags: [COMMIT_MSG]...[/COMMIT_MSG]
 
                 Current Code:
                 """.formatted(projectStructure));
