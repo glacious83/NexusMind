@@ -20,8 +20,8 @@ public class NexusMindOrchestrator {
                 "C:/Users/mmamouze/IdeaProjects/NexusMind"
         );
         this.checkpointManager = new CheckpointManager();
-        this.improvementAgent = new ImprovementAgent(checkpointManager, repoManager);
         this.gitManager = new GitManager(repoManager.getLocalPath());
+        this.improvementAgent = new ImprovementAgent(checkpointManager, repoManager, gitManager);
         this.structureMapper = new ProjectStructureMapper(repoManager.getLocalPath());
         this.aiPlanner = new AIPlanner();
         this.featureCreatorAgent = new FeatureCreatorAgent(repoManager, checkpointManager);
