@@ -20,7 +20,7 @@ public class ImprovementAgent {
         this.repoManager = repoManager;
         this.aiCommunicator = new AICommunicator();
         this.chatReader = new ChatReader();
-        this.gitManager = new GitManager("https://github.com/glacious83/NexusMind");
+        this.gitManager = new GitManager("C:\\Users\\mmamouze\\IdeaProjects\\NexusMind");
     }
 
     public void improveNextFiles(int batchSize) {
