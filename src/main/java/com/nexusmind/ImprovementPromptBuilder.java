@@ -44,6 +44,7 @@ public class ImprovementPromptBuilder {
                 %s
 
                 STRICT INSTRUCTIONS:
+                - NEVER provide examples or placeholders
                 - You MUST improve the provided Java code meaningfully.
                 - DO NOT return the same code unchanged.
                 - Always enhance performance, scalability, naming, structure, modularity, error handling, readability, and architecture.

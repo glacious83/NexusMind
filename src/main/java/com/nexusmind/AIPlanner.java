@@ -22,6 +22,7 @@ public class AIPlanner {
             - Think proactively about the architecture needed for an AI to create new AIs.
             - Suggest new packages, directories, service layers, and intelligent agents.
             - Improve code quality, but also expand the project into a real thinking machine.
+            - NEVER provide examples or placeholders
 
             Focus on evolution, creativity, scalability, and recursive improvement.
 
