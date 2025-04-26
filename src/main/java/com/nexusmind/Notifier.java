@@ -7,12 +7,11 @@ import java.nio.charset.StandardCharsets;
 
 public class Notifier {
 
-    private static final String WEBHOOK_URL = "https://hooks.slack.com/services/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";
+    private static final String WEBHOOK_URL = "https://hooks.slack.com/services/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";
 
     public static void main(String[] args) {
         sendSuccess("Test Message: NexusMind webhook notification successful!");
     }
-
 
     public static void sendSuccess(String message) {
         sendMessage("[✅ NexusMind] " + message);
@@ -30,7 +29,7 @@ public class Notifier {
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setDoOutput(true);
 
-            String payload = "{\"content\":\"" + content.replace("\"", "\\\"") + "\"}";
+            String payload = "{\"text\":\"" + content.replace("\"", "\\\"") + "\"}"; // <<< CHANGE to "text"
 
             try (OutputStream os = conn.getOutputStream()) {
                 byte[] input = payload.getBytes(StandardCharsets.UTF_8);
@@ -38,8 +37,10 @@ public class Notifier {
             }
 
             int responseCode = conn.getResponseCode();
-            if (responseCode != 204) {
+            if (responseCode != 204 && responseCode != 200) {
                 System.err.println("Failed to send webhook notification. HTTP code: " + responseCode);
+            } else {
+                System.out.println("Message send correctly");
             }
 
         } catch (Exception e) {
