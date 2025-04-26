@@ -74,17 +74,22 @@ public class ImprovementAgent {
                 break;
             }
 
-            String commitMessage = "AI Improvement"; // fallback
+            // Initialize fallback commit message
+            String commitMessage = "AI Improvement";
+
             int commitStart = fullResponse.indexOf("[COMMIT_MSG]");
             int commitEnd = fullResponse.indexOf("[/COMMIT_MSG]");
 
             if (commitStart != -1 && commitEnd != -1 && commitEnd > commitStart) {
                 commitMessage = fullResponse.substring(commitStart + 12, commitEnd).trim();
                 fullResponse = fullResponse.substring(0, commitStart).trim();
+            } else {
+                System.out.println("Warning: No commit message provided by AI. Using fallback.");
             }
 
             System.out.println("Extracted Commit Message: " + commitMessage);
 
+            // Write the improved code only
             try (FileWriter writer = new FileWriter(nextFile)) {
                 writer.write(fullResponse);
             } catch (IOException e) {
