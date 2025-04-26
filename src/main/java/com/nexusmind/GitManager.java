@@ -41,11 +41,17 @@ public class GitManager {
             System.out.println("Switching to evolution branch: " + branchName);
 
             runCommand(new String[]{"git", "-C", localRepoPath, "add", "."});
-            runCommand(new String[]{"git", "-C", localRepoPath, "commit", "-m", commitMessage});
-            runCommand(new String[]{"git", "-C", localRepoPath, "push", "-u", "origin", branchName});
+            // Check if there is anything to commit
+            if (hasChangesToCommit()) {
+                runCommand(new String[]{"git", "-C", localRepoPath, "commit", "-m", commitMessage});
+                runCommand(new String[]{"git", "-C", localRepoPath, "push", "-u", "origin", branchName});
+                System.out.println("Pushed improvements to evolution branch: " + branchName);
+                Notifier.sendSuccess("Pushed improvements to evolution branch: " + branchName + "\nCommit Message: " + commitMessage);
+            } else {
+                System.out.println("No changes to commit. Skipping Git commit and push.");
+                Notifier.sendSuccess("No changes to commit for this cycle. No push performed.");
+            }
 
-            System.out.println("Pushed improvements to evolution branch: " + branchName);
-            Notifier.sendSuccess("✅ Pushed improvements to evolution branch: " + branchName + "\nCommit Message: " + commitMessage);
 
         } catch (Exception e) {
             System.err.println("Git operation failed: " + e.getMessage());
@@ -119,6 +125,17 @@ public class GitManager {
         } catch (IOException e) {
             System.err.println("Error checking existing PRs: " + e.getMessage());
             return false;
+        }
+    }
+
+    private boolean hasChangesToCommit() {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("git", "-C", localRepoPath, "diff", "--cached", "--quiet");
+            Process process = pb.start();
+            int exitCode = process.waitFor();
+            return exitCode != 0; // if diff --cached is NOT quiet, there are changes
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to check git staged changes: " + e.getMessage(), e);
         }
     }
 
