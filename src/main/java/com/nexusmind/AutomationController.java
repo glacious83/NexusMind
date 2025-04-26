@@ -22,7 +22,13 @@ public class AutomationController {
         String[] suggestions = improvementSuggestions.split("\n");
         for (String suggestion : suggestions) {
             if (!suggestion.trim().isEmpty()) {
-                issueManager.createIssue(suggestion.trim(), "Auto-generated improvement suggestion by NexusMind AI.");
+                String priority = planner.determinePriority(suggestion);
+                String formattedBody = String.format(
+                        "### Overview\nAuto-suggested improvement by NexusMind AI.\n\n### Suggested Improvement\n%s\n\n### Priority\n%s\n\n### Estimated Complexity\nMedium",
+                        suggestion.trim(), priority
+                );
+                issueManager.createIssue(suggestion.trim(), formattedBody);
+
             }
         }
 
