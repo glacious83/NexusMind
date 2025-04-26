@@ -109,9 +109,50 @@ public class ImprovementAgent {
             if (!filesToProcess.isEmpty()) {
                 checkpointManager.saveCheckpoint(filesToProcess.get(filesToProcess.size() - 1).getAbsolutePath(), checkpointManager.getIteration() + filesToProcess.size());
             }
-            gitManager.addCommitPush("AI improved batch of " + filesToProcess.size() + " files");
+            String smartMessage = generateSmartCommitMessage(filesToProcess);
+            gitManager.addCommitPush(smartMessage);
+
         } else {
             System.out.println("No real improvements detected in the batch. No commit created.");
         }
     }
+
+    private String generateSmartCommitMessage(List<File> files) {
+        int services = 0;
+        int controllers = 0;
+        int managers = 0;
+        int dtos = 0;
+        int entities = 0;
+        int others = 0;
+
+        for (File file : files) {
+            String name = file.getName().toLowerCase();
+            String path = file.getAbsolutePath().toLowerCase();
+
+            if (name.contains("service") || path.contains("/service/")) {
+                services++;
+            } else if (name.contains("controller") || path.contains("/controller/")) {
+                controllers++;
+            } else if (name.contains("manager") || path.contains("/manager/")) {
+                managers++;
+            } else if (name.contains("dto") || path.contains("/dto/")) {
+                dtos++;
+            } else if (name.contains("entity") || path.contains("/entity/")) {
+                entities++;
+            } else {
+                others++;
+            }
+        }
+
+        List<String> parts = new ArrayList<>();
+        if (services > 0) parts.add(services + " service(s)");
+        if (controllers > 0) parts.add(controllers + " controller(s)");
+        if (managers > 0) parts.add(managers + " manager(s)");
+        if (dtos > 0) parts.add(dtos + " DTO(s)");
+        if (entities > 0) parts.add(entities + " entity/entities");
+        if (others > 0) parts.add(others + " other class(es)");
+
+        return "AI improved " + String.join(", ", parts);
+    }
+
 }
