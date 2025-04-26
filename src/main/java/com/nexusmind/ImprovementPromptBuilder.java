@@ -46,12 +46,28 @@ public class ImprovementPromptBuilder {
                 STRICT INSTRUCTIONS:
                 - You MUST improve the provided Java code meaningfully.
                 - DO NOT return the same code unchanged.
-                - Always enhance performance, scalability, naming, structure, modularity, error handling, readability, architecture.
-                - If no major logic improvements are found, at least optimize formatting, comments, minor refactoring.
+                - Always enhance performance, scalability, naming, structure, modularity, error handling, readability, and architecture.
+                - If no major logic improvements are found, at least optimize formatting, comments, and minor refactoring.
                 - You MUST return:
                     1. The full improved Java class inside a single ```java``` code block.
                     2. A short Git commit message inside [COMMIT_MSG] and [/COMMIT_MSG] tags.
                 - Both parts MUST be included every time. Otherwise, the response will be considered invalid.
+                
+                EXAMPLE OF EXPECTED RESPONSE:
+
+                ```java
+                package com.nexusmind;
+
+                public class ExampleImprovement {
+                    public void evolve() {
+                        // Improved evolution logic
+                    }
+                }
+                ```
+
+                [COMMIT_MSG]
+                Refactor ExampleImprovement to optimize evolution logic and improve method clarity.
+                [/COMMIT_MSG]
 
                 Current Code:
                 """.formatted(projectStructure));

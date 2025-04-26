@@ -6,12 +6,19 @@ import java.util.List;
 public class NexusMindOrchestrator {
 
     private final RepoManager repoManager;
+
     private final CheckpointManager checkpointManager;
+
     private final ImprovementAgent improvementAgent;
+
     private final GitManager gitManager;
+
     private final ProjectStructureMapper structureMapper;
+
     private final AIPlanner aiPlanner;
+
     private final FeatureCreatorAgent featureCreatorAgent;
+
     private final GitHubIssueManager issueManager;
 
     public NexusMindOrchestrator() {
@@ -49,26 +56,37 @@ public class NexusMindOrchestrator {
                 String suggestions = aiPlanner.generateImprovementSuggestions(projectSummary);
 
                 if (suggestions != null && !suggestions.isBlank()) {
-                    List<String> suggestionList = Arrays.asList(suggestions.split("\n"));
-                    System.out.println("Received " + suggestionList.size() + " suggestions from AI.");
 
-                    // Step 5: Create GitHub issues for evolution tasks
-                    for (String suggestion : suggestionList) {
-                        if (!suggestion.trim().isEmpty()) {
+                    // First check if AI sent real suggestions or raw Java code
+                    if (suggestions.contains("package ") || suggestions.contains("public class") || suggestions.contains("class ") || suggestions.contains(
+                            "{")) {
+                        System.out.println("[Warning] AI returned Java code instead of suggestions. Skipping Issue creation and Feature creation.");
+                    } else {
+                        List<String> suggestionList = Arrays.asList(suggestions.split("\n"));
+                        System.out.println("Received " + suggestionList.size() + " suggestions from AI.");
+
+                        // Step 5: Create GitHub issues for evolution tasks
+                        for (String suggestion : suggestionList) {
+                            suggestion = suggestion.trim();
+                            if (suggestion.isEmpty())
+                                continue;
+                            if (suggestion.length() < 5)
+                                continue;
+
                             issueManager.createIssue(
                                     suggestion.length() > 250 ? suggestion.substring(0, 250) + "..." : suggestion.trim(),
                                     suggestion.trim()
                             );
                         }
+
+                        // Step 6: Create new feature agents based on suggestions
+                        featureCreatorAgent.createFeaturesFromSuggestions(suggestionList);
+
+                        // Step 7: Push created new features
+                        gitManager.addCommitPush(
+                                "AI created new autonomous feature modules based on self-evolution planning"
+                        );
                     }
-
-                    // Step 6: Create new feature agents based on suggestions
-                    featureCreatorAgent.createFeaturesFromSuggestions(suggestionList);
-
-                    // Step 7: Push created new features
-                    gitManager.addCommitPush(
-                            "AI created new autonomous feature modules based on self-evolution planning"
-                    );
                 }
 
                 Notifier.sendSuccess("NexusMind successfully completed an evolution cycle.");
