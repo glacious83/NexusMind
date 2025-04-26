@@ -97,4 +97,8 @@ public class RepoManager {
         return 5;
     }
 
+    public String getLocalPath() {
+        return localPath;
+    }
+
 }
