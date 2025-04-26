@@ -4,18 +4,19 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
-import java.util.Scanner;
 
 public class ImprovementAgent {
 
     private final CheckpointManager checkpointManager;
     private final RepoManager repoManager;
     private final AICommunicator aiCommunicator;
+    private final ChatReader chatReader;
 
     public ImprovementAgent(CheckpointManager checkpointManager, RepoManager repoManager) {
         this.checkpointManager = checkpointManager;
         this.repoManager = repoManager;
         this.aiCommunicator = new AICommunicator();
+        this.chatReader = new ChatReader();
     }
 
     public void improveNextFile() {
@@ -30,25 +31,26 @@ public class ImprovementAgent {
         File nextFile = new File(nextFilePath);
         try {
             String content = new String(Files.readAllBytes(nextFile.toPath()));
-            aiCommunicator.displayPromptForUser(nextFile.getName(), content);
 
-            System.out.println("Paste the improved code here (terminate with a line containing only 'EOF'):");
-            Scanner scanner = new Scanner(System.in);
-            StringBuilder improvedCode = new StringBuilder();
-            while (scanner.hasNextLine()) {
-                String line = scanner.nextLine();
-                if (line.trim().equals("EOF")) {
-                    break;
-                }
-                improvedCode.append(line).append("\n");
+            aiCommunicator.sendPromptAutomatically(nextFile.getName(), content);
+
+            chatReader.openExistingSession();
+
+            System.out.println("Waiting for AI response (30 seconds)...");
+            Thread.sleep(30000); // Give ChatGPT time to respond
+
+            String improvedCode = chatReader.fetchLatestCodeBlock();
+            chatReader.close();
+
+            if (improvedCode != null && !improvedCode.isBlank()) {
+                Files.write(nextFile.toPath(), improvedCode.getBytes(), StandardOpenOption.TRUNCATE_EXISTING);
+                checkpointManager.saveCheckpoint(nextFilePath, checkpointManager.getIteration() + 1);
+                System.out.println("Improved file saved and checkpoint updated.");
+            } else {
+                System.err.println("Failed to retrieve improved code.");
             }
 
-            Files.write(nextFile.toPath(), improvedCode.toString().getBytes(), StandardOpenOption.TRUNCATE_EXISTING);
-
-            checkpointManager.saveCheckpoint(nextFilePath, checkpointManager.getIteration() + 1);
-            System.out.println("Improved file saved and checkpoint updated.");
-
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             System.err.println("Error improving file: " + e.getMessage());
         }
     }
