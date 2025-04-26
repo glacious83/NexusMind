@@ -28,9 +28,17 @@ public class AICommunicator {
 
     private void triggerAutoHotkeyScript() {
         try {
-            Runtime.getRuntime().exec(new File(Objects.requireNonNull(AICommunicator.class.getResource("/nexus_ai.ahk")).toURI()).getAbsolutePath()); // <-- Put your real AHK script path here
+            String ahkScriptPath = new File(
+                    Objects.requireNonNull(AICommunicator.class.getResource("/nexus_ai.ahk")).toURI()
+            ).getAbsolutePath();
+
+            String autoHotkeyPath = "C:\\Program Files\\AutoHotkey\\AutoHotkey.exe";
+
+            Runtime.getRuntime().exec(new String[] {autoHotkeyPath, ahkScriptPath});
+
         } catch (IOException | URISyntaxException e) {
             System.err.println("Error running AutoHotkey script: " + e.getMessage());
         }
     }
+
 }
