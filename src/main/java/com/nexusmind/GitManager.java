@@ -38,23 +38,35 @@ public class GitManager {
 
         try {
             System.out.println("Creating and pushing new branch: " + branchName);
+
             runCommand(new String[]{"git", "-C", localRepoPath, "checkout", "-b", branchName});
             runCommand(new String[]{"git", "-C", localRepoPath, "add", "."});
             runCommand(new String[]{"git", "-C", localRepoPath, "commit", "-m", commitMessage});
             runCommand(new String[]{"git", "-C", localRepoPath, "push", "-u", "origin", branchName});
 
-            System.out.println("Creating Pull Request...");
+            // Optional: small sleep to allow GitHub to "settle" the branch
+            Thread.sleep(5000);
+
+            System.out.println("Checking for existing Pull Request...");
 
             if (pullRequestExists(branchName)) {
                 System.out.println("Pull Request already exists for branch: " + branchName);
                 Notifier.sendSuccess("Pull Request already exists for branch: " + branchName + "\nCommit Message: " + commitMessage);
             } else {
-                createPullRequest(branchName, "main");
-                System.out.println("Pull Request created successfully!");
-                Notifier.sendSuccess("Pull Request created successfully for branch: " + branchName + "\nCommit Message: " + commitMessage);
+                try {
+                    createPullRequest(branchName, "main");
+                    System.out.println("Pull Request created successfully!");
+                    Notifier.sendSuccess("Pull Request created successfully for branch: " + branchName + "\nCommit Message: " + commitMessage);
+                } catch (RuntimeException e) {
+                    if (e.getMessage().contains("HTTP code: 422")) {
+                        System.err.println("GitHub rejected Pull Request creation (likely already exists or locked).");
+                        Notifier.sendSuccess("PR creation skipped for branch: " + branchName + " (likely already exists or GitHub UI lock).");
+                    } else {
+                        Notifier.sendError("Git operation failed: " + e.getMessage());
+                        throw e; // rethrow if it's not 422
+                    }
+                }
             }
-
-            System.out.println("Pull Request created successfully!");
 
         } catch (Exception e) {
             System.err.println("Git operation failed: " + e.getMessage());
