@@ -1,123 +1,93 @@
 package com.nexusmind;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
-public class GitManager {
+public class AutomationController {
 
-    private final String localRepoPath;
-    private final String githubRepoOwner;
-    private final String githubRepoName;
-    private final String githubToken;
+    private static final int FILE_BATCH_SIZE = 5;
+    private static final long SLEEP_INTERVAL_SUCCESS_MS = TimeUnit.HOURS.toMillis(1);
+    private static final long SLEEP_INTERVAL_ERROR_MS = TimeUnit.MINUTES.toMillis(10);
 
-    public GitManager(String localRepoPath) {
-        this.localRepoPath = localRepoPath;
-        this.githubRepoOwner = "glacious83";
-        this.githubRepoName = "NexusMind";
-        this.githubToken = loadGithubToken();
-    }
+    public static void main(String[] args) {
+        System.out.println("Starting NexusMind Automation (Self-Loop Mode Enabled)...");
 
-    private String loadGithubToken() {
-        File file = new File("C:/nexusmind_secrets/github_token.txt"); // <-- Your real local path
-        try {
-            return new String(Files.readAllBytes(file.toPath())).trim();
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to load GitHub Token from file: " + e.getMessage());
-        }
-    }
+        CheckpointManager checkpointManager = new CheckpointManager();
+        RepoManager repoManager = new RepoManager("https://github.com/glacious83/NexusMind", "C:\\Users\\mmamouze\\IdeaProjects\\NexusMind");
+        ImprovementAgent agent = new ImprovementAgent(checkpointManager, repoManager);
+        RepoAnalyzer analyzer = new RepoAnalyzer("C:\\Users\\mmamouze\\IdeaProjects\\NexusMind");
+        AIPlanner planner = new AIPlanner();
+        GitHubIssueManager issueManager = new GitHubIssueManager();
 
-    public void addCommitPush(String commitMessage, int iteration) {
-        String branchName = "nexusmind/batch-" + iteration + "-" + System.currentTimeMillis();
-
-        try {
-            System.out.println("Creating and pushing new branch: " + branchName);
-            runCommand(new String[]{"git", "-C", localRepoPath, "checkout", "-b", branchName});
-            runCommand(new String[]{"git", "-C", localRepoPath, "add", "."});
-            runCommand(new String[]{"git", "-C", localRepoPath, "commit", "-m", commitMessage});
-            runCommand(new String[]{"git", "-C", localRepoPath, "push", "-u", "origin", branchName});
-
-            System.out.println("Creating Pull Request...");
-
-            System.out.println("Creating Pull Request...");
+        while (true) {
+            System.out.println("\n==== NexusMind New Cycle ====");
 
             try {
-                createPullRequest(branchName, "master");
-                System.out.println("Pull Request created successfully!");
-                Notifier.sendSuccess("Pull Request created successfully for branch: " + branchName);
+                performCycle(repoManager, agent, analyzer, planner, issueManager);
+                sleep(SLEEP_INTERVAL_SUCCESS_MS);
             } catch (Exception e) {
-                System.err.println("Git operation failed: " + e.getMessage());
-                Notifier.sendError("Git operation failed: " + e.getMessage());
+                System.err.println("Error during cycle: " + e.getMessage());
+                Notifier.sendError("Error during cycle: " + e.getMessage());
+                sleep(SLEEP_INTERVAL_ERROR_MS);
             }
-
-            System.out.println("Pull Request created successfully!");
-
-        } catch (Exception e) {
-            System.err.println("Git operation failed: " + e.getMessage());
         }
     }
 
-    private void runCommand(String[] command) throws IOException, InterruptedException {
-        ProcessBuilder pb = new ProcessBuilder(command);
-        pb.directory(new File(localRepoPath));
-        pb.inheritIO();
-        Process process = pb.start();
-        int exitCode = process.waitFor();
-        if (exitCode != 0) {
-            throw new RuntimeException("Command failed: " + String.join(" ", command));
-        }
+    private static void performCycle(RepoManager repoManager, ImprovementAgent agent, RepoAnalyzer analyzer, AIPlanner planner, GitHubIssueManager issueManager) {
+        repoManager.updateRepo();
+        agent.improveNextFiles(FILE_BATCH_SIZE);
+
+        String projectSummary = analyzer.generateProjectSummary();
+        String improvementSuggestions = planner.generateImprovementSuggestions(projectSummary);
+
+        Arrays.stream(improvementSuggestions.split("\n"))
+                .map(String::trim)
+                .filter(suggestion -> !suggestion.isEmpty())
+                .forEach(suggestion -> {
+                    String priority = determinePriority(suggestion);
+                    String formattedBody = buildIssueBody(suggestion, priority);
+                    issueManager.createIssue(suggestion, formattedBody);
+                });
+
+        System.out.println("\nCycle completed.");
     }
 
-    private void createPullRequest(String branchName, String baseBranch) throws IOException {
-        URL url = new URL("https://api.github.com/repos/" + githubRepoOwner + "/" + githubRepoName + "/pulls");
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("POST");
-        connection.setRequestProperty("Authorization", "Bearer " + githubToken);
-        connection.setRequestProperty("Accept", "application/vnd.github+json");
-        connection.setDoOutput(true);
-
-        String jsonPayload = String.format(
-                "{\"title\":\"AI improvements - %s\",\"head\":\"%s\",\"base\":\"%s\"}",
-                branchName, branchName, baseBranch
-        );
-
-        try (OutputStream os = connection.getOutputStream()) {
-            byte[] input = jsonPayload.getBytes(StandardCharsets.UTF_8);
-            os.write(input, 0, input.length);
-        }
-
-        int responseCode = connection.getResponseCode();
-        if (responseCode != 201) {
-            throw new RuntimeException("Failed to create Pull Request. HTTP code: " + responseCode);
-        }
-    }
-
-    private boolean pullRequestExists(String branchName) {
+    private static void sleep(long millis) {
         try {
-            URL url = new URL("https://api.github.com/repos/" + githubRepoOwner + "/" + githubRepoName + "/pulls?head=" + githubRepoOwner + ":" + branchName);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
-            connection.setRequestProperty("Authorization", "Bearer " + githubToken);
-            connection.setRequestProperty("Accept", "application/vnd.github+json");
-
-            int responseCode = connection.getResponseCode();
-
-            if (responseCode == 200) {
-                String responseBody = new String(connection.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-                return !responseBody.equals("[]"); // If not empty array, PR exists
-            } else {
-                System.err.println("Failed to check existing PRs. HTTP code: " + responseCode);
-                return false; // Assume no PR if error
-            }
-
-        } catch (IOException e) {
-            System.err.println("Error checking existing PRs: " + e.getMessage());
-            return false;
+            Thread.sleep(millis);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
         }
     }
 
+    private static String determinePriority(String suggestion) {
+        String lower = suggestion.toLowerCase();
+        if (lower.contains("security") || lower.contains("critical") || lower.contains("crash") || lower.contains("vulnerability")) {
+            return "High";
+        }
+        if (lower.contains("optimize") || lower.contains("performance") || lower.contains("refactor") || lower.contains("improve")) {
+            return "Medium";
+        }
+        return "Low";
+    }
+
+    private static String buildIssueBody(String suggestion, String priority) {
+        return String.format(
+                "### Overview\n" +
+                        "This issue was auto-generated by NexusMind AI.\n\n" +
+                        "### Problem Description\n" +
+                        "%s\n\n" +
+                        "### Suggested Solution\n" +
+                        "_(NexusMind recommends improving this area based on project structure analysis.)_\n\n" +
+                        "### Priority\n" +
+                        "%s\n\n" +
+                        "### Estimated Complexity\n" +
+                        "Medium\n\n" +
+                        "### Additional Notes\n" +
+                        "NexusMind can attempt an automated Pull Request once approved.",
+                suggestion,
+                priority
+        );
+    }
 }

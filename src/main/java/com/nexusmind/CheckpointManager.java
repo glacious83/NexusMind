@@ -1,62 +1,93 @@
 package com.nexusmind;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.JsonNode;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
-import java.io.File;
-import java.io.IOException;
+public class AutomationController {
 
-public class CheckpointManager {
+    private static final int FILE_BATCH_SIZE = 5;
+    private static final long SLEEP_INTERVAL_SUCCESS_MS = TimeUnit.HOURS.toMillis(1);
+    private static final long SLEEP_INTERVAL_ERROR_MS = TimeUnit.MINUTES.toMillis(10);
 
-    private static final String CHECKPOINT_FILE = "progress.json";
+    public static void main(String[] args) {
+        System.out.println("Starting NexusMind Automation (Self-Loop Mode Enabled)...");
 
-    private String lastProcessedFile;
-    private int iteration;
+        CheckpointManager checkpointManager = new CheckpointManager();
+        RepoManager repoManager = new RepoManager("https://github.com/glacious83/NexusMind", "C:\\Users\\mmamouze\\IdeaProjects\\NexusMind");
+        ImprovementAgent agent = new ImprovementAgent(checkpointManager, repoManager);
+        RepoAnalyzer analyzer = new RepoAnalyzer("C:\\Users\\mmamouze\\IdeaProjects\\NexusMind");
+        AIPlanner planner = new AIPlanner();
+        GitHubIssueManager issueManager = new GitHubIssueManager();
 
-    public CheckpointManager() {
-        loadCheckpoint();
+        while (true) {
+            System.out.println("\n==== NexusMind New Cycle ====");
+
+            try {
+                performCycle(repoManager, agent, analyzer, planner, issueManager);
+                sleep(SLEEP_INTERVAL_SUCCESS_MS);
+            } catch (Exception e) {
+                System.err.println("Error during cycle: " + e.getMessage());
+                Notifier.sendError("Error during cycle: " + e.getMessage());
+                sleep(SLEEP_INTERVAL_ERROR_MS);
+            }
+        }
     }
 
-    private void loadCheckpoint() {
-        File file = new File(CHECKPOINT_FILE);
-        if (!file.exists()) {
-            System.out.println("No existing checkpoint found. Starting fresh.");
-            this.lastProcessedFile = null;
-            this.iteration = 0;
-            return;
-        }
+    private static void performCycle(RepoManager repoManager, ImprovementAgent agent, RepoAnalyzer analyzer, AIPlanner planner, GitHubIssueManager issueManager) {
+        repoManager.updateRepo();
+        agent.improveNextFiles(FILE_BATCH_SIZE);
+
+        String projectSummary = analyzer.generateProjectSummary();
+        String improvementSuggestions = planner.generateImprovementSuggestions(projectSummary);
+
+        Arrays.stream(improvementSuggestions.split("\n"))
+                .map(String::trim)
+                .filter(suggestion -> !suggestion.isEmpty())
+                .forEach(suggestion -> {
+                    String priority = determinePriority(suggestion);
+                    String formattedBody = buildIssueBody(suggestion, priority);
+                    issueManager.createIssue(suggestion, formattedBody);
+                });
+
+        System.out.println("\nCycle completed.");
+    }
+
+    private static void sleep(long millis) {
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode root = mapper.readTree(file);
-            this.lastProcessedFile = root.path("last_processed_file").asText(null);
-            this.iteration = root.path("iteration").asInt(0);
-            System.out.println("Loaded checkpoint: " + lastProcessedFile + " at iteration " + iteration);
-        } catch (IOException e) {
-            System.err.println("Error loading checkpoint: " + e.getMessage());
-            this.lastProcessedFile = null;
-            this.iteration = 0;
+            Thread.sleep(millis);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
         }
     }
 
-    public void saveCheckpoint(String lastProcessedFile, int iteration) {
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            ObjectNode root = mapper.createObjectNode();
-            root.put("last_processed_file", lastProcessedFile);
-            root.put("iteration", iteration);
-            mapper.writerWithDefaultPrettyPrinter().writeValue(new File(CHECKPOINT_FILE), root);
-            System.out.println("Checkpoint saved: " + lastProcessedFile + " at iteration " + iteration);
-        } catch (IOException e) {
-            System.err.println("Error saving checkpoint: " + e.getMessage());
+    private static String determinePriority(String suggestion) {
+        String lower = suggestion.toLowerCase();
+        if (lower.contains("security") || lower.contains("critical") || lower.contains("crash") || lower.contains("vulnerability")) {
+            return "High";
         }
+        if (lower.contains("optimize") || lower.contains("performance") || lower.contains("refactor") || lower.contains("improve")) {
+            return "Medium";
+        }
+        return "Low";
     }
 
-    public String getLastProcessedFile() {
-        return lastProcessedFile;
-    }
-
-    public int getIteration() {
-        return iteration;
+    private static String buildIssueBody(String suggestion, String priority) {
+        return String.format(
+                "### Overview\n" +
+                        "This issue was auto-generated by NexusMind AI.\n\n" +
+                        "### Problem Description\n" +
+                        "%s\n\n" +
+                        "### Suggested Solution\n" +
+                        "_(NexusMind recommends improving this area based on project structure analysis.)_\n\n" +
+                        "### Priority\n" +
+                        "%s\n\n" +
+                        "### Estimated Complexity\n" +
+                        "Medium\n\n" +
+                        "### Additional Notes\n" +
+                        "NexusMind can attempt an automated Pull Request once approved.",
+                suggestion,
+                priority
+        );
     }
 }

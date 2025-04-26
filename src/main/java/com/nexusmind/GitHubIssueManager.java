@@ -1,60 +1,93 @@
 package com.nexusmind;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
-public class GitHubIssueManager {
+public class AutomationController {
 
-    private final String githubRepoOwner;
-    private final String githubRepoName;
-    private final String githubToken;
+    private static final int FILE_BATCH_SIZE = 5;
+    private static final long SLEEP_INTERVAL_SUCCESS_MS = TimeUnit.HOURS.toMillis(1);
+    private static final long SLEEP_INTERVAL_ERROR_MS = TimeUnit.MINUTES.toMillis(10);
 
-    public GitHubIssueManager() {
-        this.githubRepoOwner = "glacious83";
-        this.githubRepoName = "NexusMind";
-        this.githubToken = loadGithubToken();
-    }
+    public static void main(String[] args) {
+        System.out.println("Starting NexusMind Automation (Self-Loop Mode Enabled)...");
 
-    private String loadGithubToken() {
-        try {
-            return new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get("C:/nexusmind_secrets/github_token.txt"))).trim();
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to load GitHub Token from file: " + e.getMessage());
+        CheckpointManager checkpointManager = new CheckpointManager();
+        RepoManager repoManager = new RepoManager("https://github.com/glacious83/NexusMind", "C:\\Users\\mmamouze\\IdeaProjects\\NexusMind");
+        ImprovementAgent agent = new ImprovementAgent(checkpointManager, repoManager);
+        RepoAnalyzer analyzer = new RepoAnalyzer("C:\\Users\\mmamouze\\IdeaProjects\\NexusMind");
+        AIPlanner planner = new AIPlanner();
+        GitHubIssueManager issueManager = new GitHubIssueManager();
+
+        while (true) {
+            System.out.println("\n==== NexusMind New Cycle ====");
+
+            try {
+                performCycle(repoManager, agent, analyzer, planner, issueManager);
+                sleep(SLEEP_INTERVAL_SUCCESS_MS);
+            } catch (Exception e) {
+                System.err.println("Error during cycle: " + e.getMessage());
+                Notifier.sendError("Error during cycle: " + e.getMessage());
+                sleep(SLEEP_INTERVAL_ERROR_MS);
+            }
         }
     }
 
-    public void createIssue(String title, String body) {
+    private static void performCycle(RepoManager repoManager, ImprovementAgent agent, RepoAnalyzer analyzer, AIPlanner planner, GitHubIssueManager issueManager) {
+        repoManager.updateRepo();
+        agent.improveNextFiles(FILE_BATCH_SIZE);
+
+        String projectSummary = analyzer.generateProjectSummary();
+        String improvementSuggestions = planner.generateImprovementSuggestions(projectSummary);
+
+        Arrays.stream(improvementSuggestions.split("\n"))
+                .map(String::trim)
+                .filter(suggestion -> !suggestion.isEmpty())
+                .forEach(suggestion -> {
+                    String priority = determinePriority(suggestion);
+                    String formattedBody = buildIssueBody(suggestion, priority);
+                    issueManager.createIssue(suggestion, formattedBody);
+                });
+
+        System.out.println("\nCycle completed.");
+    }
+
+    private static void sleep(long millis) {
         try {
-            URL url = new URL("https://api.github.com/repos/" + githubRepoOwner + "/" + githubRepoName + "/issues");
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("POST");
-            connection.setRequestProperty("Authorization", "Bearer " + githubToken);
-            connection.setRequestProperty("Accept", "application/vnd.github+json");
-            connection.setDoOutput(true);
-
-            String jsonPayload = String.format(
-                    "{\"title\":\"%s\",\"body\":\"%s\"}",
-                    title.replace("\"", "\\\""),
-                    body.replace("\"", "\\\"")
-            );
-
-            try (OutputStream os = connection.getOutputStream()) {
-                byte[] input = jsonPayload.getBytes(StandardCharsets.UTF_8);
-                os.write(input, 0, input.length);
-            }
-
-            int responseCode = connection.getResponseCode();
-            if (responseCode != 201) {
-                throw new RuntimeException("Failed to create GitHub Issue. HTTP code: " + responseCode);
-            }
-
-            System.out.println("Issue created successfully: " + title);
-
-        } catch (IOException e) {
-            System.err.println("Error creating GitHub Issue: " + e.getMessage());
+            Thread.sleep(millis);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
         }
+    }
+
+    private static String determinePriority(String suggestion) {
+        String lower = suggestion.toLowerCase();
+        if (lower.contains("security") || lower.contains("critical") || lower.contains("crash") || lower.contains("vulnerability")) {
+            return "High";
+        }
+        if (lower.contains("optimize") || lower.contains("performance") || lower.contains("refactor") || lower.contains("improve")) {
+            return "Medium";
+        }
+        return "Low";
+    }
+
+    private static String buildIssueBody(String suggestion, String priority) {
+        return String.format(
+                "### Overview\n" +
+                        "This issue was auto-generated by NexusMind AI.\n\n" +
+                        "### Problem Description\n" +
+                        "%s\n\n" +
+                        "### Suggested Solution\n" +
+                        "_(NexusMind recommends improving this area based on project structure analysis.)_\n\n" +
+                        "### Priority\n" +
+                        "%s\n\n" +
+                        "### Estimated Complexity\n" +
+                        "Medium\n\n" +
+                        "### Additional Notes\n" +
+                        "NexusMind can attempt an automated Pull Request once approved.",
+                suggestion,
+                priority
+        );
     }
 }
