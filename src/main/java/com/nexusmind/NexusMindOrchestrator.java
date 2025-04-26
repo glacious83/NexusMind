@@ -41,8 +41,7 @@ public class NexusMindOrchestrator {
 
                 // Step 3: Push improvements
                 gitManager.addCommitPush(
-                        "AI improved batch with smarter prompts and safe improvements",
-                        checkpointManager.getIteration()
+                        "AI improved batch with smarter prompts and safe improvements"
                 );
 
                 // Step 4: Plan further evolution
@@ -68,8 +67,7 @@ public class NexusMindOrchestrator {
 
                     // Step 7: Push created new features
                     gitManager.addCommitPush(
-                            "AI created new autonomous feature modules based on self-evolution planning",
-                            checkpointManager.getIteration()
+                            "AI created new autonomous feature modules based on self-evolution planning"
                     );
                 }
 
