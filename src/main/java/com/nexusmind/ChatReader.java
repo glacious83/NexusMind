@@ -1,11 +1,18 @@
 package com.nexusmind;
 
-import com.microsoft.playwright.*;
+import com.microsoft.playwright.Browser;
+import com.microsoft.playwright.BrowserType;
+import com.microsoft.playwright.ElementHandle;
+import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Playwright;
+import com.microsoft.playwright.PlaywrightException;
+import com.microsoft.playwright.options.WaitForSelectorState;
 import java.util.List;
 
 public class ChatReader {
 
     private Browser browser;
+
     private Page page;
 
     public void openExistingSession() {
@@ -13,7 +20,16 @@ public class ChatReader {
         BrowserType chromium = playwright.chromium();
 
         // Connect to the existing Edge browser over websocket
-        Browser browser = chromium.connectOverCDP("http://localhost:9222");
+        // Connect to your already-running Edge/Chrome (must have been launched with --remote-debugging-port=9222)
+        this.browser = chromium.connectOverCDP("http://localhost:9222");
+        // Grab the first open page (or open a new one if none exist)
+        if (!browser.contexts().isEmpty() && !browser.contexts().get(0).pages().isEmpty()) {
+            this.page = browser.contexts().get(0).pages().get(0);
+        } else {
+            this.page = browser.newContext().newPage();
+        }
+        // Make sure we're on the ChatGPT interface
+        page.navigate("https://chat.openai.com/chat");
         Page page = browser.contexts().get(0).pages().get(0);
         this.page = page;
 
@@ -29,13 +45,16 @@ public class ChatReader {
     }
 
     public String fetchLatestCodeBlock() {
-        try{
+        try {
             try {
                 // Wait up to 90 seconds for a code block to appear
-                page.waitForSelector("pre code", new Page.WaitForSelectorOptions().setTimeout(90000));
+                page.waitForSelector("div.markdown pre",
+                        new Page.WaitForSelectorOptions()
+                                .setState(WaitForSelectorState.VISIBLE)
+                                .setTimeout(90000));
 
                 // Query all matching code blocks (in case there are multiple)
-                List<ElementHandle> codeBlocks = page.querySelectorAll("pre code");
+                List<ElementHandle> codeBlocks = page.querySelectorAll("div.markdown pre");
 
                 if (codeBlocks.isEmpty()) {
                     System.err.println("No code blocks found after waiting.");

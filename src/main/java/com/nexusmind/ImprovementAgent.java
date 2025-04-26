@@ -1,28 +1,31 @@
 package com.nexusmind;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.nio.file.*;
+import java.util.*;
+
+/**
+ * Coordinates the AI‐driven improvement of Java source files, extraction of commit messages,
+ * and atomic Git commits only when valid changes are present.
+ */
 public class ImprovementAgent {
 
+    private static final Logger logger = LoggerFactory.getLogger(ImprovementAgent.class);
+
     private final CheckpointManager checkpointManager;
-
     private final RepoManager repoManager;
-
     private final ProjectStructureMapper structureMapper;
-
     private final ImprovementPromptBuilder promptBuilder;
-
     private final AICommunicator aiCommunicator;
-
     private final ChatReader chatReader;
-
     private final GitManager gitManager;
 
-    public ImprovementAgent(CheckpointManager checkpointManager, RepoManager repoManager, GitManager gitManager) {
+    public ImprovementAgent(CheckpointManager checkpointManager,
+            RepoManager repoManager,
+            GitManager gitManager) {
         this.checkpointManager = checkpointManager;
         this.repoManager = repoManager;
         this.gitManager = gitManager;
@@ -33,103 +36,105 @@ public class ImprovementAgent {
         this.chatReader = new ChatReader();
     }
 
+    /**
+     * Processes up to {@code batchSize} files: prompts the AI, validates output,
+     * records valid improvements, and commits them all in one meaningful Git commit.
+     */
     public void improveNextFiles(int batchSize) {
         String lastProcessed = checkpointManager.getLastProcessedFile();
         int iteration = checkpointManager.getIteration();
 
         List<String> improvedFiles = new ArrayList<>();
         List<String> commitMessages = new ArrayList<>();
-        int filesProcessed = 0;
 
-        while (filesProcessed < batchSize) {
-            String nextFilePath = repoManager.getNextFileToProcess(lastProcessed);
-
-            if (nextFilePath == null) {
-                System.out.println("No more files to process.");
+        for (int i = 0; i < batchSize; i++) {
+            String filePath = repoManager.getNextFileToProcess(lastProcessed);
+            if (filePath == null) {
+                logger.info("No more files to process.");
                 break;
             }
 
-            File nextFile = new File(nextFilePath);
-            if (!nextFile.exists()) {
-                System.err.println("File does not exist: " + nextFilePath);
-                lastProcessed = nextFilePath;
+            Path path = Paths.get(filePath);
+            if (!Files.exists(path)) {
+                logger.warn("File not found, skipping: {}", filePath);
+                lastProcessed = filePath;
                 checkpointManager.saveCheckpoint(lastProcessed, iteration);
                 continue;
             }
 
-            System.out.println("Improving file: " + nextFilePath);
-
-            List<String> dependencies = repoManager.findRelatedDependencies(nextFile);
-            String prompt = promptBuilder.buildPromptForFile(nextFile, dependencies);
-
+            logger.info("Improving file: {}", filePath);
+            String prompt = promptBuilder.buildPromptForFile(path.toFile(),
+                    repoManager.findRelatedDependencies(path.toFile()));
             aiCommunicator.sendPromptAutomatically("Improve Java Class and Provide Commit Message", prompt);
 
             chatReader.openExistingSession();
-            System.out.println("Waiting for AI response (30 seconds)...");
             try {
-                Thread.sleep(30000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-
-            String fullResponse = chatReader.fetchLatestCodeBlock();
-            chatReader.close();
-
-            if (fullResponse == null) {
-                System.err.println("Failed to retrieve improved code for file: " + nextFilePath);
-                break;
-            }
-
-            String commitMessage = extractCommitMessage(fullResponse);
-            String improvedCode = extractImprovedCode(fullResponse);
-
-            System.out.println("Extracted Commit Message: " + commitMessage);
-
-            // only persist & record when the AI output is valid Java
-            if (SimpleJavaValidator.isValidJavaClass(improvedCode)) {
-                try (FileWriter writer = new FileWriter(nextFile)) {
-                    writer.write(improvedCode);
-                    System.out.println("Valid Java code detected and saved for: " + nextFilePath);
-                    improvedFiles.add(nextFilePath);
-                    commitMessages.add(commitMessage);
-                } catch (IOException e) {
-                    System.err.println("Error writing improved file: " + nextFilePath);
+                // TODO: replace sleep with smarter wait-for-response logic
+                Thread.sleep(30_000);
+                String fullResponse = chatReader.fetchLatestCodeBlock();
+                if (fullResponse == null) {
+                    logger.error("AI response timed out for file: {}", filePath);
+                    break;
                 }
-            } else {
-                System.err.println("[NexusMind] Skipping invalid Java response for: " + nextFilePath);
-                // skip adding this file and its fallback message
-                lastProcessed = nextFilePath;
+
+                Optional<String> maybeMsg = extractCommitMessage(fullResponse);
+                if (maybeMsg.isEmpty()) {
+                    logger.error("No [COMMIT_MSG] tag in response; skipping: {}", filePath);
+                    lastProcessed = filePath;
+                    checkpointManager.saveCheckpoint(lastProcessed, iteration);
+                    continue;
+                }
+                String commitMsg = maybeMsg.get();
+
+                String improvedCode = extractImprovedCode(fullResponse);
+                if (!SimpleJavaValidator.isValidJavaClass(improvedCode)) {
+                    logger.error("AI-produced code invalid for file: {}; skipping", filePath);
+                    lastProcessed = filePath;
+                    checkpointManager.saveCheckpoint(lastProcessed, iteration);
+                    continue;
+                }
+
+                Files.writeString(path, improvedCode, StandardOpenOption.TRUNCATE_EXISTING);
+                logger.info("File updated: {}", filePath);
+                improvedFiles.add(filePath);
+                commitMessages.add(path.getFileName() + ": " + commitMsg);
+
+                lastProcessed = filePath;
+                iteration++;
                 checkpointManager.saveCheckpoint(lastProcessed, iteration);
-                continue;
+
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                logger.error("Interrupted while waiting for AI response", ie);
+                break;
+            } catch (IOException ioe) {
+                logger.error("Error writing improved code to file: {}", filePath, ioe);
+            } finally {
+                chatReader.close();
             }
-
-            lastProcessed = nextFilePath;
-            filesProcessed++;
         }
 
-        if (!improvedFiles.isEmpty()) {
-            checkpointManager.saveCheckpoint(lastProcessed, checkpointManager.getIteration() + 1);
-
-            String fullCommitMessage = String.join("\n", commitMessages);
-            gitManager.addCommitPush(fullCommitMessage);
+        if (improvedFiles.isEmpty()) {
+            logger.info("No valid improvements detected; skipping Git commit.");
+            return;
         }
+
+        String fullCommit = String.join("\n\n", commitMessages);
+        logger.info("Committing {} files with message:\n{}", improvedFiles.size(), fullCommit);
+        gitManager.addCommitPush(fullCommit);
     }
 
-    private String extractCommitMessage(String response) {
+    private Optional<String> extractCommitMessage(String response) {
         int start = response.indexOf("[COMMIT_MSG]");
-        int end = response.indexOf("[/COMMIT_MSG]");
-        if (start != -1 && end != -1 && end > start) {
-            return response.substring(start + 12, end).trim();
+        int end   = response.indexOf("[/COMMIT_MSG]");
+        if (start >= 0 && end > start) {
+            return Optional.of(response.substring(start + 12, end).trim());
         }
-        System.out.println("Warning: No commit message provided by AI. Using fallback.");
-        return "AI Improvement (fallback)";
+        return Optional.empty();
     }
 
     private String extractImprovedCode(String response) {
-        int start = response.indexOf("[COMMIT_MSG]");
-        if (start != -1) {
-            return response.substring(0, start).trim();
-        }
-        return response.trim();
+        int idx = response.indexOf("[COMMIT_MSG]");
+        return idx >= 0 ? response.substring(0, idx).trim() : response.trim();
     }
 }
