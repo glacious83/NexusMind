@@ -7,7 +7,7 @@ import java.nio.charset.StandardCharsets;
 
 public class Notifier {
 
-    private static final String WEBHOOK_URL = "https://hooks.slack.com/services/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";
+    private static final String WEBHOOK_URL = "https://hooks.slack.com/services/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";
 
     public static void main(String[] args) {
         sendSuccess("Test Message: NexusMind webhook notification successful!");
