@@ -1,6 +1,7 @@
 package com.nexusmind;
 
 import com.microsoft.playwright.*;
+import java.util.List;
 
 public class ChatReader {
 
@@ -23,20 +24,31 @@ public class ChatReader {
     }
 
     public String fetchLatestCodeBlock() {
-        page.waitForSelector("pre code");
+        try {
+            // Wait up to 90 seconds for a code block to appear
+            page.waitForSelector("pre code", new Page.WaitForSelectorOptions().setTimeout(90000));
 
-        ElementHandle latestCodeBlock = page.querySelector("pre code");
+            // Query all matching code blocks (in case there are multiple)
+            List<ElementHandle> codeBlocks = page.querySelectorAll("pre code");
 
-        if (latestCodeBlock == null) {
-            System.err.println("No code block found!");
+            if (codeBlocks.isEmpty()) {
+                System.err.println("No code blocks found after waiting.");
+                return null;
+            }
+
+            // Get the last one (most recent)
+            ElementHandle latestCodeBlock = codeBlocks.get(codeBlocks.size() - 1);
+            String codeContent = latestCodeBlock.innerText();
+
+            System.out.println("Fetched code block successfully.");
+            return codeContent;
+
+        } catch (PlaywrightException e) {
+            System.err.println("Timeout or error while waiting for code block: " + e.getMessage());
             return null;
         }
-
-        String codeContent = latestCodeBlock.innerText();
-
-        System.out.println("Fetched code block successfully.");
-        return codeContent;
     }
+
 
     public void close() {
         if (browser != null) {

@@ -55,6 +55,7 @@ public class AutomationController {
 
             } catch (Exception e) {
                 System.err.println("Error during cycle: " + e.getMessage());
+                Notifier.sendError("Error during cycle: " + e.getMessage());
                 try {
                     Thread.sleep(10 * 60 * 1000); // Sleep 10 minutes after error
                 } catch (InterruptedException ex) {
