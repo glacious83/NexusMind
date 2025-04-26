@@ -45,6 +45,7 @@ public class ChatReader {
 
         } catch (PlaywrightException e) {
             System.err.println("Timeout or error while waiting for code block: " + e.getMessage());
+            Notifier.sendError("Timeout or error while waiting for code block: " + e.getMessage());
             return null;
         }
     }
