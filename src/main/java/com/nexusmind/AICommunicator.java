@@ -32,7 +32,7 @@ public class AICommunicator {
                     Objects.requireNonNull(AICommunicator.class.getResource("/nexus_ai.ahk")).toURI()
             ).getAbsolutePath();
 
-            String autoHotkeyPath = "C:\\Program Files\\AutoHotkey\\AutoHotkey.exe";
+            String autoHotkeyPath = "C:\\Program Files\\AutoHotkey\\v2\\AutoHotkey.exe";
 
             Runtime.getRuntime().exec(new String[] {autoHotkeyPath, ahkScriptPath});
 
