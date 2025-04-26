@@ -79,10 +79,17 @@ public class ImprovementAgent {
 
             System.out.println("Extracted Commit Message: " + commitMessage);
 
-            try (FileWriter writer = new FileWriter(nextFile)) {
-                writer.write(improvedCode);
-            } catch (IOException e) {
-                System.err.println("Error writing improved file: " + nextFilePath);
+            if (SimpleJavaValidator.isValidJavaClass(improvedCode)) {
+                try (FileWriter writer = new FileWriter(nextFile)) {
+                    writer.write(improvedCode);
+                    System.out.println("Valid Java code detected and saved for: " + nextFilePath);
+                    improvedFiles.add(nextFilePath);
+                    commitMessages.add(commitMessage);
+                } catch (IOException e) {
+                    System.err.println("Error writing improved file: " + nextFilePath);
+                }
+            } else {
+                System.err.println("[NexusMind] Skipping file due to invalid Java response: " + nextFilePath);
             }
 
             improvedFiles.add(nextFilePath);
