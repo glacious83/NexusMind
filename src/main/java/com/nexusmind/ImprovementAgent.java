@@ -9,11 +9,17 @@ import java.util.List;
 public class ImprovementAgent {
 
     private final CheckpointManager checkpointManager;
+
     private final RepoManager repoManager;
+
     private final ProjectStructureMapper structureMapper;
+
     private final ImprovementPromptBuilder promptBuilder;
+
     private final AICommunicator aiCommunicator;
+
     private final ChatReader chatReader;
+
     private final GitManager gitManager;
 
     public ImprovementAgent(CheckpointManager checkpointManager, RepoManager repoManager, GitManager gitManager) {
@@ -79,6 +85,7 @@ public class ImprovementAgent {
 
             System.out.println("Extracted Commit Message: " + commitMessage);
 
+            // only persist & record when the AI output is valid Java
             if (SimpleJavaValidator.isValidJavaClass(improvedCode)) {
                 try (FileWriter writer = new FileWriter(nextFile)) {
                     writer.write(improvedCode);
@@ -89,11 +96,12 @@ public class ImprovementAgent {
                     System.err.println("Error writing improved file: " + nextFilePath);
                 }
             } else {
-                System.err.println("[NexusMind] Skipping file due to invalid Java response: " + nextFilePath);
+                System.err.println("[NexusMind] Skipping invalid Java response for: " + nextFilePath);
+                // skip adding this file and its fallback message
+                lastProcessed = nextFilePath;
+                checkpointManager.saveCheckpoint(lastProcessed, iteration);
+                continue;
             }
-
-            improvedFiles.add(nextFilePath);
-            commitMessages.add(commitMessage);
 
             lastProcessed = nextFilePath;
             filesProcessed++;
