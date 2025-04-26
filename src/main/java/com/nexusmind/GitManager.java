@@ -1,5 +1,7 @@
 package com.nexusmind;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -106,7 +108,17 @@ public class GitManager {
 
             if (responseCode == 200) {
                 String responseBody = new String(connection.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-                return !responseBody.equals("[]"); // If not empty array, PR exists
+
+                // Parse the JSON array properly
+                ObjectMapper mapper = new ObjectMapper();
+                JsonNode rootNode = mapper.readTree(responseBody);
+
+                if (rootNode.isArray() && rootNode.size() > 0) {
+                    return true; // PR already exists
+                } else {
+                    return false; // No PR exists
+                }
+
             } else {
                 System.err.println("Failed to check existing PRs. HTTP code: " + responseCode);
                 return false; // Assume no PR if error
@@ -117,5 +129,6 @@ public class GitManager {
             return false;
         }
     }
+
 
 }
