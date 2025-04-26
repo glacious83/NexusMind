@@ -1,5 +1,6 @@
 package com.nexusmind;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -7,7 +8,17 @@ import java.nio.charset.StandardCharsets;
 
 public class Notifier {
 
-    private static final String WEBHOOK_URL = "https://hooks.slack.com/services/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";
+    private static final String WEBHOOK_URL = loadWebhookUrl();
+
+    private static String loadWebhookUrl() {
+        try {
+            return new String(java.nio.file.Files.readAllBytes(
+                    java.nio.file.Paths.get("C:/nexusmind_secrets/slack_webhook.txt")
+            )).trim();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load Slack webhook URL from file: " + e.getMessage());
+        }
+    }
 
     public static void main(String[] args) {
         sendSuccess("Test Message: NexusMind webhook notification successful!");
