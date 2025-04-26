@@ -3,7 +3,7 @@
 
 SetTitleMatchMode(2) ; Allow partial match
 
-Sleep(10000) ; Wait 10 seconds for ChatGPT window to open
+Sleep(15000) ; Wait 10 seconds for ChatGPT window to open
 
 if WinExist("ChatGPT") {
     WinActivate("ChatGPT")
