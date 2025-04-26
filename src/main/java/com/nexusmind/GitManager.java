@@ -58,6 +58,7 @@ public class GitManager {
 
         } catch (Exception e) {
             System.err.println("Git operation failed: " + e.getMessage());
+            Notifier.sendError("Git operation failed: " + e.getMessage());
         }
     }
 
