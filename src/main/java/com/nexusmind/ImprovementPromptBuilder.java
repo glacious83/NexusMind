@@ -22,9 +22,9 @@ public class ImprovementPromptBuilder {
             StringBuilder prompt = new StringBuilder();
 
             prompt.append("""
-                You are improving the following Java class:
+                You are tasked with directly improving this existing Java class.
 
-                File path: %s
+                File Path: %s
                 Package: %s
 
                 Dependencies:
@@ -44,14 +44,13 @@ public class ImprovementPromptBuilder {
                 %s
 
                 Instructions:
-                - Improve performance, scalability, readability
-                - Avoid changing public method signatures unless absolutely necessary
-                - Keep the file inside its current package
-                - Keep import paths correct
-                - Do not move methods to other files
-                - Maintain clean code principles
-                - Return ONLY the improved full file content inside a ```java``` code block.
-                - Additionally, provide a Git commit message summarizing your changes inside these special tags: [COMMIT_MSG]...[/COMMIT_MSG]
+                - Carefully improve the provided Java class code.
+                - Focus on improving performance, scalability, error handling, modularity, architecture, and readability.
+                - Expand the class if needed to add capabilities for AI self-improvement, self-repair, meta-learning, or autonomous behavior.
+                - DO NOT discuss improvements. Just directly modify and return the full improved Java code.
+                - If you detect missing critical modules or services, note their creation ideas briefly inside the commit message.
+                - Return ONLY the full improved Java code inside a ```java``` block.
+                - Additionally, provide a short Git commit message summarizing your changes inside [COMMIT_MSG]...[/COMMIT_MSG].
 
                 Current Code:
                 """.formatted(projectStructure));

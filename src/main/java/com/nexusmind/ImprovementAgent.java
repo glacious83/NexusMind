@@ -59,9 +59,9 @@ public class ImprovementAgent {
             aiCommunicator.sendPromptAutomatically("Improve Java Class and Provide Commit Message", prompt);
 
             chatReader.openExistingSession();
-            System.out.println("Waiting for AI response (45 seconds)...");
+            System.out.println("Waiting for AI response (30 seconds)...");
             try {
-                Thread.sleep(45000);
+                Thread.sleep(30000);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
@@ -74,24 +74,13 @@ public class ImprovementAgent {
                 break;
             }
 
-            // Initialize fallback commit message
-            String commitMessage = "AI Improvement";
-
-            int commitStart = fullResponse.indexOf("[COMMIT_MSG]");
-            int commitEnd = fullResponse.indexOf("[/COMMIT_MSG]");
-
-            if (commitStart != -1 && commitEnd != -1 && commitEnd > commitStart) {
-                commitMessage = fullResponse.substring(commitStart + 12, commitEnd).trim();
-                fullResponse = fullResponse.substring(0, commitStart).trim();
-            } else {
-                System.out.println("Warning: No commit message provided by AI. Using fallback.");
-            }
+            String commitMessage = extractCommitMessage(fullResponse);
+            String improvedCode = extractImprovedCode(fullResponse);
 
             System.out.println("Extracted Commit Message: " + commitMessage);
 
-            // Write the improved code only
             try (FileWriter writer = new FileWriter(nextFile)) {
-                writer.write(fullResponse);
+                writer.write(improvedCode);
             } catch (IOException e) {
                 System.err.println("Error writing improved file: " + nextFilePath);
             }
@@ -109,5 +98,23 @@ public class ImprovementAgent {
             String fullCommitMessage = String.join("\n", commitMessages);
             gitManager.addCommitPush(fullCommitMessage);
         }
+    }
+
+    private String extractCommitMessage(String response) {
+        int start = response.indexOf("[COMMIT_MSG]");
+        int end = response.indexOf("[/COMMIT_MSG]");
+        if (start != -1 && end != -1 && end > start) {
+            return response.substring(start + 12, end).trim();
+        }
+        System.out.println("Warning: No commit message provided by AI. Using fallback.");
+        return "AI Improvement (fallback)";
+    }
+
+    private String extractImprovedCode(String response) {
+        int start = response.indexOf("[COMMIT_MSG]");
+        if (start != -1) {
+            return response.substring(0, start).trim();
+        }
+        return response.trim();
     }
 }
