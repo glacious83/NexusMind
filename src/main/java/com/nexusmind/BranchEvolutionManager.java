@@ -36,7 +36,6 @@ public class BranchEvolutionManager {
      */
     public String getOrCreateEvolutionBranch() {
         try {
-            // Get existing branch name or create a new one
             String branchName = getExistingBranchName().orElseGet(this::createNewBranch);
             checkoutBranch(branchName); // Checkout the determined branch
             return branchName;
@@ -54,7 +53,7 @@ public class BranchEvolutionManager {
     private Optional<String> getExistingBranchName() throws IOException {
         Path checkpointPath = Paths.get(EVOLUTION_BRANCH_FILE);
         if (Files.exists(checkpointPath)) {
-            return Optional.of(new String(Files.readAllBytes(checkpointPath)).trim());
+            return Optional.of(Files.readString(checkpointPath).trim());
         }
         return Optional.empty();
     }
@@ -67,7 +66,7 @@ public class BranchEvolutionManager {
      */
     private String createNewBranch() throws IOException {
         String newBranchName = "nexusmind/evolution-" + System.currentTimeMillis();
-        Files.write(Paths.get(EVOLUTION_BRANCH_FILE), newBranchName.getBytes());
+        Files.writeString(Paths.get(EVOLUTION_BRANCH_FILE), newBranchName);
         return newBranchName;
     }
 

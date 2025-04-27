@@ -33,6 +33,10 @@ public class GitManager {
         this.githubToken = loadGithubToken();
     }
 
+    /**
+     * Loads the GitHub token from the file.
+     * @return GitHub token as a string
+     */
     private String loadGithubToken() {
         try {
             return Files.readString(new File(GITHUB_TOKEN_FILE_PATH).toPath()).trim();
@@ -42,6 +46,10 @@ public class GitManager {
         }
     }
 
+    /**
+     * Performs a commit and push operation for the given commit message.
+     * @param commitMessage The commit message
+     */
     public void addCommitPush(String commitMessage) {
         BranchEvolutionManager branchManager = new BranchEvolutionManager(localRepoPath);
         String branchName = branchManager.getOrCreateEvolutionBranch();
@@ -67,6 +75,12 @@ public class GitManager {
         }
     }
 
+    /**
+     * Executes a Git command with specified arguments.
+     * @param command Command arguments
+     * @throws IOException If an I/O error occurs
+     * @throws InterruptedException If the process is interrupted
+     */
     private void runGitCommand(String... command) throws IOException, InterruptedException {
         ProcessBuilder pb = new ProcessBuilder(command);
         pb.directory(new File(localRepoPath));
@@ -78,6 +92,12 @@ public class GitManager {
         }
     }
 
+    /**
+     * Creates a Pull Request for the specified branch.
+     * @param branchName The name of the branch
+     * @param baseBranch The base branch for the PR
+     * @throws IOException If an I/O error occurs during PR creation
+     */
     public void createPullRequest(String branchName, String baseBranch) throws IOException {
         URL url = new URL(GITHUB_API_URL + githubRepoOwner + "/" + githubRepoName + "/pulls");
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -102,6 +122,11 @@ public class GitManager {
         }
     }
 
+    /**
+     * Checks if a pull request already exists for the specified branch.
+     * @param branchName The name of the branch
+     * @return True if a PR exists, otherwise false
+     */
     private boolean pullRequestExists(String branchName) {
         try {
             URL url = new URL(GITHUB_API_URL + githubRepoOwner + "/" + githubRepoName + "/pulls?head=" + githubRepoOwner + ":" + branchName);
@@ -127,6 +152,10 @@ public class GitManager {
         }
     }
 
+    /**
+     * Checks if there are any staged changes in the Git repository.
+     * @return True if there are changes to commit, otherwise false
+     */
     private boolean hasChangesToCommit() {
         try {
             ProcessBuilder pb = new ProcessBuilder("git", "-C", localRepoPath, "diff", "--cached", "--quiet");
@@ -138,6 +167,4 @@ public class GitManager {
             throw new RuntimeException("Failed to check git staged changes: " + e.getMessage(), e);
         }
     }
-
-    // Additional methods for retries and better error handling could be added here.
 }

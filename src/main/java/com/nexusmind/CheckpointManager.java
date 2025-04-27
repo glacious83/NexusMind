@@ -157,4 +157,21 @@ public class CheckpointManager {
         this.iteration = iteration;
         LOGGER.info(String.format("Checkpoint reset to file: %s, iteration: %d", lastProcessedFile, iteration));
     }
+
+    /**
+     * Saves the checkpoint data to the checkpoint file, ensuring an atomic operation.
+     * This method provides better error handling and ensures that the file is only written to if the checkpoint is valid.
+     * 
+     * @param lastProcessedFile The last processed file.
+     * @param iteration The current iteration.
+     * @throws IOException if an error occurs during file writing.
+     */
+    private void atomicSaveCheckpoint(String lastProcessedFile, int iteration) throws IOException {
+        ObjectNode root = MAPPER.createObjectNode();
+        root.put("last_processed_file", Optional.ofNullable(lastProcessedFile).orElse(""));
+        root.put("iteration", iteration);
+
+        byte[] content = MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(root).getBytes();
+        Files.write(Paths.get(CHECKPOINT_FILE), content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+    }
 }

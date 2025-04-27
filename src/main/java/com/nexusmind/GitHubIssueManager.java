@@ -135,4 +135,20 @@ public class GitHubIssueManager {
     private String escapeJsonString(String input) {
         return input.replace("\"", "\\\"");
     }
+
+    /**
+     * Validates the issue parameters before creating an issue.
+     *
+     * @param title the title of the issue
+     * @param body  the body content of the issue
+     * @throws IllegalArgumentException if title or body is invalid
+     */
+    private void validateIssueParams(String title, String body) {
+        if (title == null || title.trim().isEmpty()) {
+            throw new IllegalArgumentException("Issue title cannot be null or empty");
+        }
+        if (body == null || body.trim().isEmpty()) {
+            throw new IllegalArgumentException("Issue body cannot be null or empty");
+        }
+    }
 }

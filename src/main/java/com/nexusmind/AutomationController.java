@@ -20,14 +20,10 @@ public class AutomationController {
     public static void main(String[] args) {
         logger.info("Starting NexusMind Orchestrator...");
 
-        // Initialize the orchestrator with proper exception handling
+        // Initialize the orchestrator and proceed if successful
         NexusMindOrchestrator orchestrator = initializeOrchestrator();
-
-        // Only start the automation cycle if the orchestrator is successfully initialized
         if (orchestrator != null) {
             startAutomationCycle(orchestrator);
-        } else {
-            logger.error("Orchestrator initialization failed. Aborting automation cycle.");
         }
     }
 
@@ -38,10 +34,8 @@ public class AutomationController {
      */
     private static NexusMindOrchestrator initializeOrchestrator() {
         try {
-            // Return a new instance of the orchestrator
             return new NexusMindOrchestrator();
         } catch (Exception e) {
-            // Log the exception with clear context for easier diagnosis
             logger.error("Failed to initialize NexusMindOrchestrator.", e);
             return null;
         }
