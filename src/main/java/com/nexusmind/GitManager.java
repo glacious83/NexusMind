@@ -23,10 +23,10 @@ public class GitManager {
     private final String githubRepoName;
     private final String githubToken;
 
-    public GitManager(String localRepoPath) {
+    public GitManager(String localRepoPath, String githubRepoOwner, String githubRepoName) {
         this.localRepoPath = localRepoPath;
-        this.githubRepoOwner = "glacious83";
-        this.githubRepoName = "NexusMind";
+        this.githubRepoOwner = githubRepoOwner != null ? githubRepoOwner : "glacious83"; // Default to "glacious83" if null
+        this.githubRepoName = githubRepoName != null ? githubRepoName : "NexusMind"; // Default to "NexusMind" if null
         this.githubToken = loadGithubToken();
     }
 
@@ -47,7 +47,7 @@ public class GitManager {
             LOGGER.info("Switching to evolution branch: " + branchName);
 
             runGitCommand("add", ".");
-            
+
             if (hasChangesToCommit()) {
                 runGitCommand("commit", "-m", commitMessage);
                 runGitCommand("push", "-u", "origin", branchName);

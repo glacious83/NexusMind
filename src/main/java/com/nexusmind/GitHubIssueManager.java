@@ -6,6 +6,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -14,16 +15,16 @@ public class GitHubIssueManager {
 
     private static final Logger LOGGER = Logger.getLogger(GitHubIssueManager.class.getName());
     private static final int MAX_TITLE_LENGTH = 250;
+    private static final String GITHUB_TOKEN_FILE_PATH = "C:/nexusmind_secrets/github_token.txt";
+    private static final String GITHUB_API_URL_TEMPLATE = "https://api.github.com/repos/%s/%s/issues";
+
     private final String githubRepoOwner;
     private final String githubRepoName;
     private final String githubToken;
 
-    private static final String GITHUB_TOKEN_FILE_PATH = "C:/nexusmind_secrets/github_token.txt";
-    private static final String GITHUB_API_URL_TEMPLATE = "https://api.github.com/repos/%s/%s/issues";
-    
-    public GitHubIssueManager() {
-        this.githubRepoOwner = "glacious83";
-        this.githubRepoName = "NexusMind";
+    public GitHubIssueManager(String repoOwner, String repoName) {
+        this.githubRepoOwner = repoOwner != null ? repoOwner : "glacious83";
+        this.githubRepoName = repoName != null ? repoName : "NexusMind";
         this.githubToken = loadGithubToken();
     }
 
@@ -34,11 +35,14 @@ public class GitHubIssueManager {
      */
     private String loadGithubToken() {
         try {
-            return new String(Files.readAllBytes(Paths.get(GITHUB_TOKEN_FILE_PATH))).trim();
+            Path tokenFilePath = Paths.get(GITHUB_TOKEN_FILE_PATH);
+            if (!Files.exists(tokenFilePath)) {
+                throw new RuntimeException("GitHub token file not found.");
+            }
+            return new String(Files.readAllBytes(tokenFilePath)).trim();
         } catch (IOException e) {
-            String errorMessage = "Failed to load GitHub Token from file: " + e.getMessage();
-            LOGGER.log(Level.SEVERE, errorMessage, e);
-            throw new RuntimeException(errorMessage, e);
+            LOGGER.log(Level.SEVERE, "Failed to load GitHub Token from file: " + e.getMessage(), e);
+            throw new RuntimeException("Failed to load GitHub Token", e);
         }
     }
 
@@ -65,8 +69,7 @@ public class GitHubIssueManager {
             handleResponse(connection);
 
         } catch (IOException e) {
-            String errorMessage = "Error creating GitHub Issue: " + e.getMessage();
-            LOGGER.log(Level.SEVERE, errorMessage, e);
+            LOGGER.log(Level.SEVERE, "Error creating GitHub Issue: " + e.getMessage(), e);
         }
     }
 
@@ -77,7 +80,10 @@ public class GitHubIssueManager {
      * @return the truncated title
      */
     private String truncateTitle(String title) {
-        return title.length() > MAX_TITLE_LENGTH ? title.substring(0, MAX_TITLE_LENGTH) + "..." : title;
+        if (title.length() > MAX_TITLE_LENGTH) {
+            return title.substring(0, MAX_TITLE_LENGTH) + "...";
+        }
+        return title;
     }
 
     /**
@@ -105,7 +111,7 @@ public class GitHubIssueManager {
     private void sendPostRequest(HttpURLConnection connection, String jsonPayload) throws IOException {
         try (OutputStream os = connection.getOutputStream()) {
             byte[] input = jsonPayload.getBytes(StandardCharsets.UTF_8);
-            os.write(input, 0, input.length);
+            os.write(input);
         }
     }
 
@@ -118,9 +124,8 @@ public class GitHubIssueManager {
     private void handleResponse(HttpURLConnection connection) throws IOException {
         int responseCode = connection.getResponseCode();
         if (responseCode != HttpURLConnection.HTTP_CREATED) {
-            String errorMessage = "Failed to create GitHub Issue. HTTP code: " + responseCode;
-            LOGGER.log(Level.SEVERE, errorMessage);
-            throw new RuntimeException(errorMessage);
+            LOGGER.log(Level.SEVERE, "Failed to create GitHub Issue. HTTP code: " + responseCode);
+            throw new RuntimeException("Failed to create GitHub Issue. HTTP code: " + responseCode);
         }
 
         LOGGER.info("Issue created successfully: " + connection.getURL());

@@ -74,7 +74,7 @@ public class CheckpointManager {
     public void saveCheckpoint(String lastProcessedFile, int iteration) {
         try {
             ObjectNode root = MAPPER.createObjectNode();
-            root.put("last_processed_file", Optional.ofNullable(lastProcessedFile).orElse(""));
+            root.put("last_processed_file", Optional.ofNullable(lastProcessedFile).orElse(""));  // Default to empty string
             root.put("iteration", iteration);
 
             // Writing to file using Files utility for better performance and exception handling
@@ -103,5 +103,15 @@ public class CheckpointManager {
      */
     public int getIteration() {
         return iteration;
+    }
+
+    /**
+     * Validates if the checkpoint file exists and is readable.
+     *
+     * @return true if the file exists and is readable, false otherwise.
+     */
+    public boolean isCheckpointFileValid() {
+        File file = new File(CHECKPOINT_FILE);
+        return file.exists() && file.canRead();
     }
 }
