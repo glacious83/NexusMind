@@ -52,6 +52,7 @@ public class ImprovementPromptBuilder {
                     1. The full improved Java class inside a single ```java``` code block.
                     2. Always include the commit message within the code block, placed between [COMMIT_MSG] and [/COMMIT_MSG] tags. This should be a short, clear summary of the changes made
                 - Both parts MUST be included every time. Otherwise, the response will be considered invalid.
+                - Make sure the code you provide me will compile with no errors!
                 - Don't forget to place the commit message inside the code block with [COMMIT_MSG] and [/COMMIT_MSG] tags.
                 
                 EXAMPLE OF EXPECTED RESPONSE:
