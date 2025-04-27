@@ -24,7 +24,7 @@ public class BranchEvolutionManager {
      * @throws IllegalArgumentException if the repository path is null or empty
      */
     private void validateLocalRepoPath(String localRepoPath) {
-        if (localRepoPath == null || localRepoPath.isEmpty()) {
+        if (localRepoPath == null || localRepoPath.trim().isEmpty()) {
             throw new IllegalArgumentException("Local repository path cannot be null or empty.");
         }
     }

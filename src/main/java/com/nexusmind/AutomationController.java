@@ -4,12 +4,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * AutomationController class orchestrates the NexusMind automation cycles.
+ * The AutomationController class orchestrates the NexusMind automation cycles.
  * It initializes the orchestrator and ensures that the automation cycle starts successfully.
  */
 public class AutomationController {
 
-    // Logger for tracking the lifecycle and errors in the automation process
+    // Logger for tracking lifecycle events and errors during the automation process
     private static final Logger logger = LoggerFactory.getLogger(AutomationController.class);
 
     /**
@@ -23,8 +23,8 @@ public class AutomationController {
         // Initialize the orchestrator with proper exception handling
         NexusMindOrchestrator orchestrator = initializeOrchestrator();
 
+        // Only start the automation cycle if the orchestrator is successfully initialized
         if (orchestrator != null) {
-            // Proceed to start the automation cycle only if the orchestrator initialization is successful
             startAutomationCycle(orchestrator);
         } else {
             logger.error("Orchestrator initialization failed. Aborting automation cycle.");
@@ -32,7 +32,7 @@ public class AutomationController {
     }
 
     /**
-     * Initializes the NexusMindOrchestrator with exception handling and logging.
+     * Initializes the NexusMindOrchestrator with proper exception handling and logging.
      *
      * @return NexusMindOrchestrator instance if initialization is successful; null otherwise.
      */
@@ -41,53 +41,52 @@ public class AutomationController {
             // Return a new instance of the orchestrator
             return new NexusMindOrchestrator();
         } catch (Exception e) {
-            // Log the exception with clear context
+            // Log the exception with clear context for easier diagnosis
             logger.error("Failed to initialize NexusMindOrchestrator.", e);
-            return null; // Return null if orchestration initialization fails
+            return null;
         }
     }
 
     /**
-     * Starts the automation cycle, catching any errors that may occur during execution.
+     * Starts the automation cycle with error handling to capture issues during the cycle execution.
      *
-     * @param orchestrator The NexusMindOrchestrator instance managing the automation.
+     * @param orchestrator The NexusMindOrchestrator instance managing the automation process.
      */
     private static void startAutomationCycle(NexusMindOrchestrator orchestrator) {
         try {
-            // Start the automation cycle and log its progress
             orchestrator.startAutomationCycle();
             logger.info("Automation cycle started successfully.");
         } catch (Exception e) {
-            // Detailed logging to help diagnose issues in the automation cycle
             logger.error("An error occurred while starting the automation cycle.", e);
         }
     }
-    
+
     /**
-     * Utility method to log the start of a specific process step in the automation.
+     * Logs the start of a specific process step in the automation cycle.
      *
-     * @param stepDescription The description of the process step.
+     * @param stepDescription A brief description of the process step.
      */
     private static void logProcessStart(String stepDescription) {
         logger.info("Starting process: {}", stepDescription);
     }
 
     /**
-     * Utility method to log the completion of a specific process step in the automation.
+     * Logs the completion of a specific process step in the automation cycle.
      *
-     * @param stepDescription The description of the process step.
+     * @param stepDescription A brief description of the process step.
      */
     private static void logProcessCompletion(String stepDescription) {
         logger.info("Completed process: {}", stepDescription);
     }
 
     /**
-     * Utility method to handle exceptions with detailed context.
+     * A utility method for handling exceptions, providing detailed context.
      *
      * @param e The exception to log.
-     * @param context The context or description of where the error occurred.
+     * @param context A description of where the error occurred.
      */
     private static void handleError(Exception e, String context) {
         logger.error("Error occurred during '{}'.", context, e);
     }
+    
 }

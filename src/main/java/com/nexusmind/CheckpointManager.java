@@ -136,4 +136,25 @@ public class CheckpointManager {
     public String getCheckpointInfo() {
         return String.format("Checkpoint - Last processed file: %s, Iteration: %d", lastProcessedFile, iteration);
     }
+
+    /**
+     * Checks if the checkpoint is initialized (i.e., not empty or null).
+     *
+     * @return true if checkpoint is initialized, false otherwise.
+     */
+    public boolean isCheckpointInitialized() {
+        return lastProcessedFile != null && !lastProcessedFile.isEmpty() && iteration > 0;
+    }
+
+    /**
+     * Resets the checkpoint to the given file and iteration values. This is a more flexible reset.
+     *
+     * @param lastProcessedFile The last processed file.
+     * @param iteration The iteration number.
+     */
+    public void resetCheckpoint(String lastProcessedFile, int iteration) {
+        this.lastProcessedFile = lastProcessedFile;
+        this.iteration = iteration;
+        LOGGER.info(String.format("Checkpoint reset to file: %s, iteration: %d", lastProcessedFile, iteration));
+    }
 }

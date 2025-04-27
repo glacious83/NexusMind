@@ -140,5 +140,4 @@ public class GitManager {
     }
 
     // Additional methods for retries and better error handling could be added here.
-
 }

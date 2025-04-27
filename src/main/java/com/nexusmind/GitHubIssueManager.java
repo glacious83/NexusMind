@@ -8,9 +8,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Optional;
 
 public class GitHubIssueManager {
 
@@ -35,14 +35,16 @@ public class GitHubIssueManager {
      * @return the GitHub token
      */
     private String loadGithubToken() {
+        Path tokenFilePath = Paths.get(GITHUB_TOKEN_FILE_PATH);
+        if (!Files.exists(tokenFilePath)) {
+            LOGGER.log(Level.SEVERE, "GitHub token file not found.");
+            throw new RuntimeException("GitHub token file not found.");
+        }
+
         try {
-            Path tokenFilePath = Paths.get(GITHUB_TOKEN_FILE_PATH);
-            if (!Files.exists(tokenFilePath)) {
-                throw new RuntimeException("GitHub token file not found.");
-            }
             return Files.readString(tokenFilePath).trim();
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Failed to load GitHub Token from file: " + e.getMessage(), e);
+            LOGGER.log(Level.SEVERE, "Failed to load GitHub Token from file.", e);
             throw new RuntimeException("Failed to load GitHub Token", e);
         }
     }
@@ -69,7 +71,7 @@ public class GitHubIssueManager {
             handleResponse(connection);
 
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Error creating GitHub Issue: " + e.getMessage(), e);
+            LOGGER.log(Level.SEVERE, "Error creating GitHub Issue.", e);
         }
     }
 
@@ -80,7 +82,7 @@ public class GitHubIssueManager {
      * @return the truncated title
      */
     private String truncateTitle(String title) {
-        return (title.length() > MAX_TITLE_LENGTH) ? title.substring(0, MAX_TITLE_LENGTH) + "..." : title;
+        return title.length() > MAX_TITLE_LENGTH ? title.substring(0, MAX_TITLE_LENGTH) + "..." : title;
     }
 
     /**
