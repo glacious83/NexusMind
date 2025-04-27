@@ -5,9 +5,15 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class GitHubIssueManager {
 
+    private static final Logger LOGGER = Logger.getLogger(GitHubIssueManager.class.getName());
+    private static final int MAX_TITLE_LENGTH = 250;
     private final String githubRepoOwner;
     private final String githubRepoName;
     private final String githubToken;
@@ -20,19 +26,19 @@ public class GitHubIssueManager {
 
     private String loadGithubToken() {
         try {
-            return new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get("C:/nexusmind_secrets/github_token.txt"))).trim();
+            return new String(Files.readAllBytes(Paths.get("C:/nexusmind_secrets/github_token.txt"))).trim();
         } catch (IOException e) {
-            throw new RuntimeException("Failed to load GitHub Token from file: " + e.getMessage());
+            String errorMessage = "Failed to load GitHub Token from file: " + e.getMessage();
+            LOGGER.log(Level.SEVERE, errorMessage, e);
+            throw new RuntimeException(errorMessage, e);
         }
     }
 
     public void createIssue(String title, String body) {
-        try {
-            // GitHub title length limit = 256 characters
-            if (title.length() > 250) {
-                title = title.substring(0, 250) + "...";
-            }
+        // Ensure the title does not exceed GitHub's character limit
+        String truncatedTitle = title.length() > MAX_TITLE_LENGTH ? title.substring(0, MAX_TITLE_LENGTH) + "..." : title;
 
+        try {
             URL url = new URL("https://api.github.com/repos/" + githubRepoOwner + "/" + githubRepoName + "/issues");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("POST");
@@ -42,8 +48,8 @@ public class GitHubIssueManager {
 
             String jsonPayload = String.format(
                     "{\"title\":\"%s\",\"body\":\"%s\"}",
-                    title.replace("\"", "\\\""),
-                    body.replace("\"", "\\\"")
+                    escapeJsonString(truncatedTitle),
+                    escapeJsonString(body)
             );
 
             try (OutputStream os = connection.getOutputStream()) {
@@ -52,14 +58,21 @@ public class GitHubIssueManager {
             }
 
             int responseCode = connection.getResponseCode();
-            if (responseCode != 201) {
-                throw new RuntimeException("Failed to create GitHub Issue. HTTP code: " + responseCode);
+            if (responseCode != HttpURLConnection.HTTP_CREATED) {
+                String errorMessage = "Failed to create GitHub Issue. HTTP code: " + responseCode;
+                LOGGER.log(Level.SEVERE, errorMessage);
+                throw new RuntimeException(errorMessage);
             }
 
-            System.out.println("Issue created successfully: " + title);
+            LOGGER.info("Issue created successfully: " + truncatedTitle);
 
         } catch (IOException e) {
-            System.err.println("Error creating GitHub Issue: " + e.getMessage());
+            String errorMessage = "Error creating GitHub Issue: " + e.getMessage();
+            LOGGER.log(Level.SEVERE, errorMessage, e);
         }
+    }
+
+    private String escapeJsonString(String input) {
+        return input.replace("\"", "\\\"");
     }
 }

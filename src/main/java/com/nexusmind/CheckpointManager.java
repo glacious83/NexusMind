@@ -6,56 +6,98 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.Optional;
 
+/**
+ * Manages the checkpointing of process state, allowing resumption after interruption.
+ * Stores the last processed file and the iteration count in a JSON file.
+ */
 public class CheckpointManager {
 
     private static final String CHECKPOINT_FILE = "progress.json";
+    private static final ObjectMapper MAPPER = new ObjectMapper();  // Reuse ObjectMapper instance
 
     private String lastProcessedFile;
     private int iteration;
 
+    /**
+     * Default constructor that loads the checkpoint from the checkpoint file.
+     */
     public CheckpointManager() {
         loadCheckpoint();
     }
 
+    /**
+     * Loads the checkpoint data from the checkpoint file.
+     * If the file doesn't exist or is corrupted, starts fresh with default values.
+     */
     private void loadCheckpoint() {
         File file = new File(CHECKPOINT_FILE);
         if (!file.exists()) {
             System.out.println("No existing checkpoint found. Starting fresh.");
-            this.lastProcessedFile = null;
-            this.iteration = 0;
+            resetCheckpoint();
             return;
         }
+        
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode root = mapper.readTree(file);
+            String jsonContent = new String(Files.readAllBytes(Paths.get(CHECKPOINT_FILE)));
+            JsonNode root = MAPPER.readTree(jsonContent);
             this.lastProcessedFile = root.path("last_processed_file").asText(null);
             this.iteration = root.path("iteration").asInt(0);
             System.out.println("Loaded checkpoint: " + lastProcessedFile + " at iteration " + iteration);
         } catch (IOException e) {
             System.err.println("Error loading checkpoint: " + e.getMessage());
-            this.lastProcessedFile = null;
-            this.iteration = 0;
+            resetCheckpoint();
         }
     }
 
+    /**
+     * Resets the checkpoint data to default values.
+     */
+    private void resetCheckpoint() {
+        this.lastProcessedFile = null;
+        this.iteration = 0;
+    }
+
+    /**
+     * Saves the checkpoint data to the checkpoint file.
+     *
+     * @param lastProcessedFile The last processed file.
+     * @param iteration The current iteration.
+     */
     public void saveCheckpoint(String lastProcessedFile, int iteration) {
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            ObjectNode root = mapper.createObjectNode();
-            root.put("last_processed_file", lastProcessedFile);
+            ObjectNode root = MAPPER.createObjectNode();
+            root.put("last_processed_file", Optional.ofNullable(lastProcessedFile).orElse(""));
             root.put("iteration", iteration);
-            mapper.writerWithDefaultPrettyPrinter().writeValue(new File(CHECKPOINT_FILE), root);
+
+            // Writing to file using Files utility for better performance and exception handling
+            Files.write(Paths.get(CHECKPOINT_FILE), MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(root).getBytes(),
+                    StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+
             System.out.println("Checkpoint saved: " + lastProcessedFile + " at iteration " + iteration);
         } catch (IOException e) {
             System.err.println("Error saving checkpoint: " + e.getMessage());
         }
     }
 
+    /**
+     * Gets the last processed file from the checkpoint data.
+     *
+     * @return The last processed file.
+     */
     public String getLastProcessedFile() {
         return lastProcessedFile;
     }
 
+    /**
+     * Gets the current iteration count from the checkpoint data.
+     *
+     * @return The current iteration count.
+     */
     public int getIteration() {
         return iteration;
     }

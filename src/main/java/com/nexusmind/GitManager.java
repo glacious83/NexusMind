@@ -9,8 +9,14 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class GitManager {
+
+    private static final Logger LOGGER = Logger.getLogger(GitManager.class.getName());
+    private static final String GITHUB_API_URL = "https://api.github.com/repos/";
+    private static final String GITHUB_TOKEN_FILE_PATH = "C:/nexusmind_secrets/github_token.txt";
 
     private final String localRepoPath;
     private final String githubRepoOwner;
@@ -25,10 +31,11 @@ public class GitManager {
     }
 
     private String loadGithubToken() {
-        File file = new File("C:/nexusmind_secrets/github_token.txt"); // <-- Your real local path
+        File file = new File(GITHUB_TOKEN_FILE_PATH);
         try {
             return new String(Files.readAllBytes(file.toPath())).trim();
         } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, "Failed to load GitHub Token from file", e);
             throw new RuntimeException("Failed to load GitHub Token from file: " + e.getMessage());
         }
     }
@@ -38,23 +45,23 @@ public class GitManager {
         String branchName = branchManager.getOrCreateEvolutionBranch();
 
         try {
-            System.out.println("Switching to evolution branch: " + branchName);
+            LOGGER.info("Switching to evolution branch: " + branchName);
 
             runCommand(new String[]{"git", "-C", localRepoPath, "add", "."});
-            // Check if there is anything to commit
+            
+            // Check if there are any staged changes
             if (hasChangesToCommit()) {
                 runCommand(new String[]{"git", "-C", localRepoPath, "commit", "-m", commitMessage});
                 runCommand(new String[]{"git", "-C", localRepoPath, "push", "-u", "origin", branchName});
-                System.out.println("Pushed improvements to evolution branch: " + branchName);
+                LOGGER.info("Pushed improvements to evolution branch: " + branchName);
                 Notifier.sendSuccess("Pushed improvements to evolution branch: " + branchName + "\nCommit Message: " + commitMessage);
             } else {
-                System.out.println("No changes to commit. Skipping Git commit and push.");
+                LOGGER.info("No changes to commit. Skipping Git commit and push.");
                 Notifier.sendSuccess("No changes to commit for this cycle. No push performed.");
             }
 
-
         } catch (Exception e) {
-            System.err.println("Git operation failed: " + e.getMessage());
+            LOGGER.log(Level.SEVERE, "Git operation failed", e);
             Notifier.sendError("❌ Git operation failed: " + e.getMessage());
         }
     }
@@ -71,7 +78,7 @@ public class GitManager {
     }
 
     private void createPullRequest(String branchName, String baseBranch) throws IOException {
-        URL url = new URL("https://api.github.com/repos/" + githubRepoOwner + "/" + githubRepoName + "/pulls");
+        URL url = new URL(GITHUB_API_URL + githubRepoOwner + "/" + githubRepoName + "/pulls");
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("POST");
         connection.setRequestProperty("Authorization", "Bearer " + githubToken);
@@ -96,34 +103,25 @@ public class GitManager {
 
     private boolean pullRequestExists(String branchName) {
         try {
-            URL url = new URL("https://api.github.com/repos/" + githubRepoOwner + "/" + githubRepoName + "/pulls?head=" + githubRepoOwner + ":" + branchName);
+            URL url = new URL(GITHUB_API_URL + githubRepoOwner + "/" + githubRepoName + "/pulls?head=" + githubRepoOwner + ":" + branchName);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
             connection.setRequestProperty("Authorization", "Bearer " + githubToken);
             connection.setRequestProperty("Accept", "application/vnd.github+json");
 
             int responseCode = connection.getResponseCode();
-
             if (responseCode == 200) {
                 String responseBody = new String(connection.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-
-                // Parse the JSON array properly
                 ObjectMapper mapper = new ObjectMapper();
                 JsonNode rootNode = mapper.readTree(responseBody);
 
-                if (rootNode.isArray() && rootNode.size() > 0) {
-                    return true; // PR already exists
-                } else {
-                    return false; // No PR exists
-                }
-
+                return rootNode.isArray() && rootNode.size() > 0;
             } else {
-                System.err.println("Failed to check existing PRs. HTTP code: " + responseCode);
-                return false; // Assume no PR if error
+                LOGGER.warning("Failed to check existing PRs. HTTP code: " + responseCode);
+                return false;
             }
-
         } catch (IOException e) {
-            System.err.println("Error checking existing PRs: " + e.getMessage());
+            LOGGER.log(Level.SEVERE, "Error checking existing PRs", e);
             return false;
         }
     }
@@ -133,11 +131,11 @@ public class GitManager {
             ProcessBuilder pb = new ProcessBuilder("git", "-C", localRepoPath, "diff", "--cached", "--quiet");
             Process process = pb.start();
             int exitCode = process.waitFor();
-            return exitCode != 0; // if diff --cached is NOT quiet, there are changes
+            return exitCode != 0;
         } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Failed to check git staged changes", e);
             throw new RuntimeException("Failed to check git staged changes: " + e.getMessage(), e);
         }
     }
-
 
 }
