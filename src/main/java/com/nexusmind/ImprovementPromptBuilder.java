@@ -50,7 +50,7 @@ public class ImprovementPromptBuilder {
                 - If no major logic improvements are found, at least optimize formatting, comments, and minor refactoring.
                 - You MUST return:
                     1. The full improved Java class inside a single ```java``` code block.
-                    2. A short Git commit message inside [COMMIT_MSG] and [/COMMIT_MSG] tags inside the code block.
+                    2. Always include the commit message within the code block, placed between [COMMIT_MSG] and [/COMMIT_MSG] tags. This should be a short, clear summary of the changes made
                 - Both parts MUST be included every time. Otherwise, the response will be considered invalid.
                 
                 EXAMPLE OF EXPECTED RESPONSE:
