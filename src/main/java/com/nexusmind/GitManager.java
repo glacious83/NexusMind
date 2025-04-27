@@ -31,9 +31,8 @@ public class GitManager {
     }
 
     private String loadGithubToken() {
-        File file = new File(GITHUB_TOKEN_FILE_PATH);
         try {
-            return new String(Files.readAllBytes(file.toPath())).trim();
+            return Files.readString(new File(GITHUB_TOKEN_FILE_PATH).toPath()).trim();
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Failed to load GitHub Token from file", e);
             throw new RuntimeException("Failed to load GitHub Token from file: " + e.getMessage());
@@ -47,12 +46,11 @@ public class GitManager {
         try {
             LOGGER.info("Switching to evolution branch: " + branchName);
 
-            runCommand(new String[]{"git", "-C", localRepoPath, "add", "."});
+            runGitCommand("add", ".");
             
-            // Check if there are any staged changes
             if (hasChangesToCommit()) {
-                runCommand(new String[]{"git", "-C", localRepoPath, "commit", "-m", commitMessage});
-                runCommand(new String[]{"git", "-C", localRepoPath, "push", "-u", "origin", branchName});
+                runGitCommand("commit", "-m", commitMessage);
+                runGitCommand("push", "-u", "origin", branchName);
                 LOGGER.info("Pushed improvements to evolution branch: " + branchName);
                 Notifier.sendSuccess("Pushed improvements to evolution branch: " + branchName + "\nCommit Message: " + commitMessage);
             } else {
@@ -66,7 +64,7 @@ public class GitManager {
         }
     }
 
-    private void runCommand(String[] command) throws IOException, InterruptedException {
+    private void runGitCommand(String... command) throws IOException, InterruptedException {
         ProcessBuilder pb = new ProcessBuilder(command);
         pb.directory(new File(localRepoPath));
         pb.inheritIO();

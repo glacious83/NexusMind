@@ -10,6 +10,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Manages the checkpointing of process state, allowing resumption after interruption.
@@ -19,6 +21,7 @@ public class CheckpointManager {
 
     private static final String CHECKPOINT_FILE = "progress.json";
     private static final ObjectMapper MAPPER = new ObjectMapper();  // Reuse ObjectMapper instance
+    private static final Logger LOGGER = Logger.getLogger(CheckpointManager.class.getName());
 
     private String lastProcessedFile;
     private int iteration;
@@ -37,7 +40,7 @@ public class CheckpointManager {
     private void loadCheckpoint() {
         File file = new File(CHECKPOINT_FILE);
         if (!file.exists()) {
-            System.out.println("No existing checkpoint found. Starting fresh.");
+            LOGGER.info("No existing checkpoint found. Starting fresh.");
             resetCheckpoint();
             return;
         }
@@ -47,9 +50,9 @@ public class CheckpointManager {
             JsonNode root = MAPPER.readTree(jsonContent);
             this.lastProcessedFile = root.path("last_processed_file").asText(null);
             this.iteration = root.path("iteration").asInt(0);
-            System.out.println("Loaded checkpoint: " + lastProcessedFile + " at iteration " + iteration);
+            LOGGER.info(String.format("Loaded checkpoint: %s at iteration %d", lastProcessedFile, iteration));
         } catch (IOException e) {
-            System.err.println("Error loading checkpoint: " + e.getMessage());
+            LOGGER.log(Level.SEVERE, "Error loading checkpoint", e);
             resetCheckpoint();
         }
     }
@@ -78,9 +81,9 @@ public class CheckpointManager {
             Files.write(Paths.get(CHECKPOINT_FILE), MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(root).getBytes(),
                     StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 
-            System.out.println("Checkpoint saved: " + lastProcessedFile + " at iteration " + iteration);
+            LOGGER.info(String.format("Checkpoint saved: %s at iteration %d", lastProcessedFile, iteration));
         } catch (IOException e) {
-            System.err.println("Error saving checkpoint: " + e.getMessage());
+            LOGGER.log(Level.SEVERE, "Error saving checkpoint", e);
         }
     }
 
