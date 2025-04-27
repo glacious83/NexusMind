@@ -78,13 +78,23 @@ public class CheckpointManager {
             root.put("iteration", iteration);
 
             // Writing to file using Files utility for better performance and exception handling
-            Files.write(Paths.get(CHECKPOINT_FILE), MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(root).getBytes(),
-                    StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+            writeCheckpointToFile(root);
 
             LOGGER.info(String.format("Checkpoint saved: %s at iteration %d", lastProcessedFile, iteration));
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Error saving checkpoint", e);
         }
+    }
+
+    /**
+     * Writes the checkpoint data to the file.
+     *
+     * @param root The root object containing the checkpoint data.
+     * @throws IOException if an error occurs during file writing.
+     */
+    private void writeCheckpointToFile(ObjectNode root) throws IOException {
+        Files.write(Paths.get(CHECKPOINT_FILE), MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(root).getBytes(),
+                StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
     }
 
     /**

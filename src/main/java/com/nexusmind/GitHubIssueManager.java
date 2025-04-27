@@ -56,6 +56,7 @@ public class GitHubIssueManager {
      * @param body  the body content of the issue
      */
     public void createIssue(String title, String body) {
+        validateIssueParams(title, body);
         String truncatedTitle = truncateTitle(title);
 
         try {

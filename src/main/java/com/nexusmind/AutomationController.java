@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 /**
  * The AutomationController class orchestrates the NexusMind automation cycles.
  * It initializes the orchestrator and ensures that the automation cycle starts successfully.
+ * The code has been refactored for better error handling, modularity, and logging.
  */
 public class AutomationController {
 
@@ -51,7 +52,7 @@ public class AutomationController {
             orchestrator.startAutomationCycle();
             logger.info("Automation cycle started successfully.");
         } catch (Exception e) {
-            logger.error("An error occurred while starting the automation cycle.", e);
+            handleError(e, "starting automation cycle");
         }
     }
 
@@ -82,5 +83,4 @@ public class AutomationController {
     private static void handleError(Exception e, String context) {
         logger.error("Error occurred during '{}'.", context, e);
     }
-    
 }

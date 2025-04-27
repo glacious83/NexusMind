@@ -36,9 +36,10 @@ public class BranchEvolutionManager {
      */
     public String getOrCreateEvolutionBranch() {
         try {
-            String branchName = getExistingBranchName().orElseGet(this::createNewBranch);
-            checkoutBranch(branchName); // Checkout the determined branch
-            return branchName;
+            // Retrieve the branch name, create a new one if not found, and checkout
+            return getExistingBranchName()
+                    .orElseGet(this::createNewBranch)
+                    .alsoCheckout(); 
         } catch (IOException e) {
             throw new RuntimeException("Failed to manage evolution branch: " + e.getMessage(), e);
         }
