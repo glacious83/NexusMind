@@ -44,7 +44,7 @@ public class CheckpointManager {
             resetCheckpoint();
             return;
         }
-        
+
         try {
             String jsonContent = new String(Files.readAllBytes(Paths.get(CHECKPOINT_FILE)));
             JsonNode root = MAPPER.readTree(jsonContent);

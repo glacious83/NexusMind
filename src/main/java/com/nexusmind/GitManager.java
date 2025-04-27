@@ -59,7 +59,7 @@ public class GitManager {
                 Notifier.sendSuccess("No changes to commit for this cycle. No push performed.");
             }
 
-        } catch (Exception e) {
+        } catch (IOException | InterruptedException e) {
             LOGGER.log(Level.SEVERE, "Git operation failed", e);
             Notifier.sendError("❌ Git operation failed: " + e.getMessage());
         }
@@ -131,7 +131,7 @@ public class GitManager {
             Process process = pb.start();
             int exitCode = process.waitFor();
             return exitCode != 0;
-        } catch (Exception e) {
+        } catch (IOException | InterruptedException e) {
             LOGGER.log(Level.SEVERE, "Failed to check git staged changes", e);
             throw new RuntimeException("Failed to check git staged changes: " + e.getMessage(), e);
         }

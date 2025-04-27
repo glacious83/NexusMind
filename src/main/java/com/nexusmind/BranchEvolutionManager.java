@@ -1,6 +1,5 @@
 package com.nexusmind;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -94,6 +93,20 @@ public class BranchEvolutionManager {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Interrupted while running Git command", e);
+        }
+    }
+
+    // New method added to improve scalability and readability
+    /**
+     * Deletes the checkpoint file after the evolution branch is no longer needed.
+     * This helps to keep the system clean and avoids leftover state.
+     *
+     * @throws IOException if there is an error deleting the file
+     */
+    public void deleteCheckpointFile() throws IOException {
+        Path checkpointPath = Paths.get(EVOLUTION_BRANCH_FILE);
+        if (Files.exists(checkpointPath)) {
+            Files.delete(checkpointPath);
         }
     }
 }

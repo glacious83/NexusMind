@@ -64,7 +64,6 @@ public class GitHubIssueManager {
             connection.setDoOutput(true);
 
             String jsonPayload = buildJsonPayload(truncatedTitle, body);
-
             sendPostRequest(connection, jsonPayload);
             handleResponse(connection);
 
@@ -80,10 +79,7 @@ public class GitHubIssueManager {
      * @return the truncated title
      */
     private String truncateTitle(String title) {
-        if (title.length() > MAX_TITLE_LENGTH) {
-            return title.substring(0, MAX_TITLE_LENGTH) + "...";
-        }
-        return title;
+        return (title.length() > MAX_TITLE_LENGTH) ? title.substring(0, MAX_TITLE_LENGTH) + "..." : title;
     }
 
     /**
@@ -94,11 +90,7 @@ public class GitHubIssueManager {
      * @return the JSON payload as a string
      */
     private String buildJsonPayload(String title, String body) {
-        return String.format(
-                "{\"title\":\"%s\",\"body\":\"%s\"}",
-                escapeJsonString(title),
-                escapeJsonString(body)
-        );
+        return String.format("{\"title\":\"%s\",\"body\":\"%s\"}", escapeJsonString(title), escapeJsonString(body));
     }
 
     /**
