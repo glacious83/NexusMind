@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Optional;
 
 public class GitHubIssueManager {
 
@@ -23,8 +24,8 @@ public class GitHubIssueManager {
     private final String githubToken;
 
     public GitHubIssueManager(String repoOwner, String repoName) {
-        this.githubRepoOwner = (repoOwner != null && !repoOwner.trim().isEmpty()) ? repoOwner : "glacious83";
-        this.githubRepoName = (repoName != null && !repoName.trim().isEmpty()) ? repoName : "NexusMind";
+        this.githubRepoOwner = Optional.ofNullable(repoOwner).filter(r -> !r.trim().isEmpty()).orElse("glacious83");
+        this.githubRepoName = Optional.ofNullable(repoName).filter(r -> !r.trim().isEmpty()).orElse("NexusMind");
         this.githubToken = loadGithubToken();
     }
 
@@ -39,7 +40,7 @@ public class GitHubIssueManager {
             if (!Files.exists(tokenFilePath)) {
                 throw new RuntimeException("GitHub token file not found.");
             }
-            return new String(Files.readAllBytes(tokenFilePath)).trim();
+            return Files.readString(tokenFilePath).trim();
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Failed to load GitHub Token from file: " + e.getMessage(), e);
             throw new RuntimeException("Failed to load GitHub Token", e);

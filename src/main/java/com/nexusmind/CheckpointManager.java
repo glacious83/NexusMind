@@ -114,4 +114,26 @@ public class CheckpointManager {
         File file = new File(CHECKPOINT_FILE);
         return file.exists() && file.canRead();
     }
+
+    /**
+     * Deletes the checkpoint file if it exists.
+     * Useful in scenarios where you want to reset the checkpoint completely.
+     */
+    public void deleteCheckpointFile() {
+        try {
+            Files.deleteIfExists(Paths.get(CHECKPOINT_FILE));
+            LOGGER.info("Checkpoint file deleted successfully.");
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, "Error deleting checkpoint file", e);
+        }
+    }
+
+    /**
+     * Provides a clean string representation of the checkpoint for debugging purposes.
+     *
+     * @return String representation of the checkpoint.
+     */
+    public String getCheckpointInfo() {
+        return String.format("Checkpoint - Last processed file: %s, Iteration: %d", lastProcessedFile, iteration);
+    }
 }

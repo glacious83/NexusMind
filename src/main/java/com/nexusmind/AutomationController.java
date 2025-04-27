@@ -20,7 +20,7 @@ public class AutomationController {
     public static void main(String[] args) {
         logger.info("Starting NexusMind Orchestrator...");
 
-        // Initialize the orchestrator with proper null checks and exception handling
+        // Initialize the orchestrator with proper exception handling
         NexusMindOrchestrator orchestrator = initializeOrchestrator();
 
         if (orchestrator != null) {
@@ -61,5 +61,33 @@ public class AutomationController {
             // Detailed logging to help diagnose issues in the automation cycle
             logger.error("An error occurred while starting the automation cycle.", e);
         }
+    }
+    
+    /**
+     * Utility method to log the start of a specific process step in the automation.
+     *
+     * @param stepDescription The description of the process step.
+     */
+    private static void logProcessStart(String stepDescription) {
+        logger.info("Starting process: {}", stepDescription);
+    }
+
+    /**
+     * Utility method to log the completion of a specific process step in the automation.
+     *
+     * @param stepDescription The description of the process step.
+     */
+    private static void logProcessCompletion(String stepDescription) {
+        logger.info("Completed process: {}", stepDescription);
+    }
+
+    /**
+     * Utility method to handle exceptions with detailed context.
+     *
+     * @param e The exception to log.
+     * @param context The context or description of where the error occurred.
+     */
+    private static void handleError(Exception e, String context) {
+        logger.error("Error occurred during '{}'.", context, e);
     }
 }

@@ -13,10 +13,20 @@ public class BranchEvolutionManager {
     private final String localRepoPath;
 
     public BranchEvolutionManager(String localRepoPath) {
+        validateLocalRepoPath(localRepoPath);
+        this.localRepoPath = localRepoPath;
+    }
+
+    /**
+     * Validates the local repository path.
+     *
+     * @param localRepoPath The repository path to validate
+     * @throws IllegalArgumentException if the repository path is null or empty
+     */
+    private void validateLocalRepoPath(String localRepoPath) {
         if (localRepoPath == null || localRepoPath.isEmpty()) {
             throw new IllegalArgumentException("Local repository path cannot be null or empty.");
         }
-        this.localRepoPath = localRepoPath;
     }
 
     /**
@@ -96,7 +106,6 @@ public class BranchEvolutionManager {
         }
     }
 
-    // New method added to improve scalability and readability
     /**
      * Deletes the checkpoint file after the evolution branch is no longer needed.
      * This helps to keep the system clean and avoids leftover state.

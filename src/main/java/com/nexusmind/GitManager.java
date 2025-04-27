@@ -18,6 +18,8 @@ public class GitManager {
     private static final Logger LOGGER = Logger.getLogger(GitManager.class.getName());
     private static final String GITHUB_API_URL = "https://api.github.com/repos/";
     private static final String GITHUB_TOKEN_FILE_PATH = "C:/nexusmind_secrets/github_token.txt";
+    private static final String DEFAULT_GITHUB_REPO_OWNER = "glacious83";
+    private static final String DEFAULT_GITHUB_REPO_NAME = "NexusMind";
 
     private final String localRepoPath;
     private final String githubRepoOwner;
@@ -26,8 +28,8 @@ public class GitManager {
 
     public GitManager(String localRepoPath, String githubRepoOwner, String githubRepoName) {
         this.localRepoPath = localRepoPath;
-        this.githubRepoOwner = githubRepoOwner != null ? githubRepoOwner : "glacious83"; // Default to "glacious83" if null
-        this.githubRepoName = githubRepoName != null ? githubRepoName : "NexusMind"; // Default to "NexusMind" if null
+        this.githubRepoOwner = githubRepoOwner != null ? githubRepoOwner : DEFAULT_GITHUB_REPO_OWNER;
+        this.githubRepoName = githubRepoName != null ? githubRepoName : DEFAULT_GITHUB_REPO_NAME;
         this.githubToken = loadGithubToken();
     }
 
@@ -36,7 +38,7 @@ public class GitManager {
             return Files.readString(new File(GITHUB_TOKEN_FILE_PATH).toPath()).trim();
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Failed to load GitHub Token from file", e);
-            throw new RuntimeException("Failed to load GitHub Token from file: " + e.getMessage());
+            throw new RuntimeException("Failed to load GitHub Token: " + e.getMessage(), e);
         }
     }
 
@@ -72,7 +74,7 @@ public class GitManager {
         Process process = pb.start();
         int exitCode = process.waitFor();
         if (exitCode != 0) {
-            throw new RuntimeException("Command failed: " + String.join(" ", command));
+            throw new RuntimeException("Git command failed: " + String.join(" ", command));
         }
     }
 
@@ -91,7 +93,7 @@ public class GitManager {
 
         try (OutputStream os = connection.getOutputStream()) {
             byte[] input = jsonPayload.getBytes(StandardCharsets.UTF_8);
-            os.write(input, 0, input.length);
+            os.write(input);
         }
 
         int responseCode = connection.getResponseCode();
@@ -137,5 +139,6 @@ public class GitManager {
         }
     }
 
-    // Additional methods to handle retries for network calls and improvements can be added here.
+    // Additional methods for retries and better error handling could be added here.
+
 }
