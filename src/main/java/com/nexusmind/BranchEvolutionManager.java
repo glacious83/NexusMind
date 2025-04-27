@@ -1,6 +1,7 @@
 package com.nexusmind;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -29,21 +30,32 @@ public class BranchEvolutionManager {
         }
     }
 
-    /**
-     * Retrieves the existing evolution branch or creates a new one if none exists.
-     *
-     * @return The branch name
-     */
     public String getOrCreateEvolutionBranch() {
         try {
-            // Retrieve the branch name, create a new one if not found, and checkout
-            return getExistingBranchName()
-                    .orElseGet(this::createNewBranch)
-                    .alsoCheckout(); 
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to manage evolution branch: " + e.getMessage(), e);
+            // Try to find an existing branch name
+            Optional<String> existing = getExistingBranchName();
+
+            // If not present, create a new one
+            String branch = existing.orElseGet(() -> {
+                try {
+                    return createNewBranch();
+                } catch (IOException ioe) {
+                    // wrap the checked exception
+                    throw new UncheckedIOException(ioe);
+                }
+            });
+
+            // Now we have a branch name (existing or new) — do the checkout
+            checkoutBranch(branch);
+            return branch;
+
+        } catch (UncheckedIOException | IOException e) {
+            // unwrap or rewrap into your RuntimeException if you like
+            Throwable cause = (e instanceof UncheckedIOException) ? e.getCause() : e;
+            throw new RuntimeException("Failed to manage evolution branch: " + cause.getMessage(), cause);
         }
     }
+
 
     /**
      * Reads the checkpoint file to get the name of the existing evolution branch.

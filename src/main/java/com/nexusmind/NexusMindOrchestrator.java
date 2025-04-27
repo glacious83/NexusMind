@@ -27,12 +27,12 @@ public class NexusMindOrchestrator {
                 "C:/Users/mmamouze/IdeaProjects/NexusMind"
         );
         this.checkpointManager = new CheckpointManager();
-        this.gitManager = new GitManager(repoManager.getLocalPath());
+        this.gitManager = new GitManager(repoManager.getLocalPath(), null, null);
         this.improvementAgent = new ImprovementAgent(checkpointManager, repoManager, gitManager);
         this.structureMapper = new ProjectStructureMapper(repoManager.getLocalPath());
         this.aiPlanner = new AIPlanner();
         this.featureCreatorAgent = new FeatureCreatorAgent(repoManager, checkpointManager);
-        this.issueManager = new GitHubIssueManager();
+        this.issueManager = new GitHubIssueManager(null, null);
     }
 
     public void startAutomationCycle() {
