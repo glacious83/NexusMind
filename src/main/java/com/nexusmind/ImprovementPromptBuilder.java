@@ -50,7 +50,7 @@ public class ImprovementPromptBuilder {
                 - If no major logic improvements are found, at least optimize formatting, comments, and minor refactoring.
                 - You MUST return:
                     1. The full improved Java class inside a single ```java``` code block.
-                    2. A short Git commit message inside [COMMIT_MSG] and [/COMMIT_MSG] tags.
+                    2. A short Git commit message inside [COMMIT_MSG] and [/COMMIT_MSG] tags inside the code block.
                 - Both parts MUST be included every time. Otherwise, the response will be considered invalid.
                 
                 EXAMPLE OF EXPECTED RESPONSE:
@@ -66,7 +66,7 @@ public class ImprovementPromptBuilder {
                 ```
 
                 [COMMIT_MSG]
-                Refactor ExampleImprovement to optimize evolution logic and improve method clarity.
+                Refactor Example: Improvement to optimize evolution logic and improve method clarity.
                 [/COMMIT_MSG]
 
                 Current Code:
