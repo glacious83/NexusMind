@@ -23,8 +23,8 @@ public class GitHubIssueManager {
     private final String githubToken;
 
     public GitHubIssueManager(String repoOwner, String repoName) {
-        this.githubRepoOwner = repoOwner != null ? repoOwner : "glacious83";
-        this.githubRepoName = repoName != null ? repoName : "NexusMind";
+        this.githubRepoOwner = (repoOwner != null && !repoOwner.trim().isEmpty()) ? repoOwner : "glacious83";
+        this.githubRepoName = (repoName != null && !repoName.trim().isEmpty()) ? repoName : "NexusMind";
         this.githubToken = loadGithubToken();
     }
 

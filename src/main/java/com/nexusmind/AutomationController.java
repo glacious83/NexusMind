@@ -22,21 +22,35 @@ public class AutomationController {
         logger.info("Starting NexusMind Orchestrator...");
 
         // Initialize the orchestrator with proper null checks and exception handling
-        NexusMindOrchestrator orchestrator = null;
+        NexusMindOrchestrator orchestrator = initializeOrchestrator();
+
+        if (orchestrator != null) {
+            startAutomationCycle(orchestrator);
+        }
+    }
+
+    /**
+     * Initializes the NexusMindOrchestrator with exception handling.
+     * 
+     * @return NexusMindOrchestrator instance or null if initialization fails.
+     */
+    private static NexusMindOrchestrator initializeOrchestrator() {
         try {
-            orchestrator = new NexusMindOrchestrator();
+            return new NexusMindOrchestrator();
         } catch (Exception e) {
             logger.error("Failed to initialize NexusMindOrchestrator", e);
-            return; // Early exit if orchestrator fails to initialize
+            return null; // Return null if orchestration initialization fails
         }
+    }
 
-        // Wrap the automation cycle in a try-catch block to handle exceptions and ensure better resource management
+    /**
+     * Starts the automation cycle in a try-catch block to handle potential errors gracefully.
+     * 
+     * @param orchestrator NexusMindOrchestrator instance responsible for automation.
+     */
+    private static void startAutomationCycle(NexusMindOrchestrator orchestrator) {
         try {
-            if (orchestrator != null) {
-                orchestrator.startAutomationCycle();
-            } else {
-                logger.warn("Orchestrator is null, skipping automation cycle.");
-            }
+            orchestrator.startAutomationCycle();
         } catch (Exception e) {
             // Log the exception with a detailed message and stack trace for better debugging
             logger.error("An error occurred while starting the automation cycle.", e);

@@ -2,6 +2,7 @@ package com.nexusmind;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -75,7 +76,7 @@ public class GitManager {
         }
     }
 
-    private void createPullRequest(String branchName, String baseBranch) throws IOException {
+    public void createPullRequest(String branchName, String baseBranch) throws IOException {
         URL url = new URL(GITHUB_API_URL + githubRepoOwner + "/" + githubRepoName + "/pulls");
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("POST");
@@ -136,4 +137,5 @@ public class GitManager {
         }
     }
 
+    // Additional methods to handle retries for network calls and improvements can be added here.
 }

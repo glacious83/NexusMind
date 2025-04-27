@@ -27,6 +27,7 @@ public class BranchEvolutionManager {
      */
     public String getOrCreateEvolutionBranch() {
         try {
+            // Get existing branch name or create a new one
             String branchName = getExistingBranchName().orElseGet(this::createNewBranch);
             checkoutBranch(branchName); // Checkout the determined branch
             return branchName;
@@ -42,9 +43,9 @@ public class BranchEvolutionManager {
      * @throws IOException if there is an error reading the file
      */
     private Optional<String> getExistingBranchName() throws IOException {
-        File checkpoint = new File(EVOLUTION_BRANCH_FILE);
-        if (checkpoint.exists()) {
-            return Optional.of(new String(Files.readAllBytes(checkpoint.toPath())).trim());
+        Path checkpointPath = Paths.get(EVOLUTION_BRANCH_FILE);
+        if (Files.exists(checkpointPath)) {
+            return Optional.of(new String(Files.readAllBytes(checkpointPath)).trim());
         }
         return Optional.empty();
     }
